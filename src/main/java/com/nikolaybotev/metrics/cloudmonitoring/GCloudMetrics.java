@@ -96,7 +96,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private GCloudMetricsEmitter createEmitter() {
         try {
             var client = MetricServiceClient.create(metricServiceSettingsSupplier.getValue());
-            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy);
+            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, this);
         } catch (IOException ex) {
             throw new RuntimeException("Error creating client.", ex);
         }

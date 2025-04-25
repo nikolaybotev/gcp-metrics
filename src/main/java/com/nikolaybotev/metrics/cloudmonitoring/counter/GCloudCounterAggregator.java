@@ -20,10 +20,10 @@ public class GCloudCounterAggregator implements GCloudMetricAggregator {
 
     @Override
     public TypedValue getAndClear() {
-        var count = aggregator.getAndClear();
+        var value = aggregator.getCurrentValue();
 
         return TypedValue.newBuilder()
-                .setInt64Value(count)
+                .setInt64Value(value)
                 .build();
     }
 }

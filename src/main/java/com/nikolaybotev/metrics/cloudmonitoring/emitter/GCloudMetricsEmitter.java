@@ -7,6 +7,9 @@ import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.Point;
 import com.google.monitoring.v3.TimeInterval;
 import com.google.protobuf.util.Timestamps;
+import com.nikolaybotev.metrics.CounterWithLabel;
+import com.nikolaybotev.metrics.Distribution;
+import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.cloudmonitoring.util.RetryOnExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,8 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     private final CreateTimeSeriesRequest requestTemplate;
     private final Duration emitInterval;
     private final RetryOnExceptions retryOnExceptions;
+    private final CounterWithLabel emitAttempts;
+    private final Distribution emitLatencyMs;
 
     private final List<GCloudMetricAggregator> aggregators = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService emitTimer;
@@ -34,11 +39,15 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     public GCloudMetricsEmitter(MetricServiceClient client,
                                 CreateTimeSeriesRequest requestTemplate,
                                 Duration emitInterval,
-                                RetryOnExceptions retryOnExceptions) {
+                                RetryOnExceptions retryOnExceptions,
+                                Metrics metrics) {
         this.client = client;
         this.requestTemplate = requestTemplate;
         this.emitInterval = emitInterval;
         this.retryOnExceptions = retryOnExceptions;
+
+        this.emitAttempts = metrics.counterWithLabel("gcp_metrics/emit_attempts", "status");;
+        this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 0, 20, 50);
 
         this.emitTimer = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
@@ -54,8 +63,10 @@ public class GCloudMetricsEmitter implements AutoCloseable {
         this.emitTimer.scheduleAtFixedRate(() -> {
             try {
                 emit();
+                emitAttempts.inc("success");
             } catch (Exception ex) {
                 logger.warn("Failed to emit metrics.", ex);
+                emitAttempts.inc(ex.getClass().getSimpleName());
             }
         },
         emitInterval.toMillis(), emitInterval.toMillis(), TimeUnit.MILLISECONDS);
@@ -97,5 +108,6 @@ public class GCloudMetricsEmitter implements AutoCloseable {
                 () -> client.createTimeSeries(request.build()),
                 Set.of(InternalException.class));
         logger.info("Emitted {} time series in {} ms.", request.getTimeSeriesCount(), elapsedMillis);
+        emitLatencyMs.update(elapsedMillis);
     }
 }

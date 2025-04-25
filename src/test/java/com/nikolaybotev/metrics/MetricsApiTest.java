@@ -128,6 +128,8 @@ public class MetricsApiTest {
             System.out.println("Time series created successfully.");
 
             // Schedule regular metrics production, 60K points / second... in 60 threads...
+            // Gather stats for metric submission time...
+            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 200);
             var threads = 60;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
@@ -146,6 +148,7 @@ public class MetricsApiTest {
 
                     var elapsedNanos = System.nanoTime() - startTime;
                     System.out.printf("Submitted 1,000 samples from %d in %.3f ms%n", n, elapsedNanos / 1e6d);
+                    submitTimeMicros.update(elapsedNanos / 1_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }
         }

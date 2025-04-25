@@ -9,7 +9,7 @@ public class CounterAggregator {
         counter.addAndGet(value);
     }
 
-    public long getAndClear() {
-        return counter.getAndSet(0);
+    public long getCurrentValue() {
+        return counter.get();
     }
 }
