@@ -1,6 +1,7 @@
 package com.nikolaybotev.metrics;
 
 import com.google.api.MonitoredResource;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
@@ -8,6 +9,8 @@ import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MetricsApiTest {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -28,8 +31,8 @@ public class MetricsApiTest {
                 .build();
 
         try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
-            var counter = metrics.counter("my_counter", "status_code");
-            var distribution = metrics.distribution("test_distribution4", 100, 100);
+            var counter = metrics.counterWithLabel("my_counter2", "status_code");
+            var distribution = metrics.distribution("test_distribution5", 100, 100);
 
             // Serialize the objects
             var serializedMetrics = new ByteArrayOutputStream();
@@ -45,17 +48,17 @@ public class MetricsApiTest {
             // Deserialize the objects
             Metrics deserializedMetrics;
             Metrics deserializedMetrics2;
-            Counter deserializedCounter;
-            Counter deserializedCounter2;
+            CounterWithLabel deserializedCounter;
+            CounterWithLabel deserializedCounter2;
             Distribution deserializedDistribution;
             Distribution deserializedDistribution2;
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics = (Metrics) ois.readObject();
                 deserializedDistribution = (Distribution) ois.readObject();
-                deserializedCounter = (Counter) ois.readObject();
+                deserializedCounter = (CounterWithLabel) ois.readObject();
                 deserializedMetrics2 = (Metrics) ois.readObject();
                 deserializedDistribution2 = (Distribution) ois.readObject();
-                deserializedCounter2 = (Counter) ois.readObject();
+                deserializedCounter2 = (CounterWithLabel) ois.readObject();
             }
 
             System.out.println("metrics and deserializedMetrics are the same instance: " + (metrics == deserializedMetrics));
@@ -70,19 +73,19 @@ public class MetricsApiTest {
 
             Metrics deserializedMetrics3;
             Metrics deserializedMetrics4;
-            Counter deserializedCounter3;
-            Counter deserializedCounter4;
+            CounterWithLabel deserializedCounter3;
+            CounterWithLabel deserializedCounter4;
             Distribution deserializedDistribution3;
             Distribution deserializedDistribution4;
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics3 = (Metrics) ois.readObject();
                 deserializedDistribution3 = (Distribution) ois.readObject();
-                deserializedCounter3 = (Counter) ois.readObject();
+                deserializedCounter3 = (CounterWithLabel) ois.readObject();
             }
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics4 = (Metrics) ois.readObject();
                 deserializedDistribution4 = (Distribution) ois.readObject();
-                deserializedCounter4 = (Counter) ois.readObject();
+                deserializedCounter4 = (CounterWithLabel) ois.readObject();
             }
 
             // Check if the deserialized instance is the same as the original
@@ -101,12 +104,18 @@ public class MetricsApiTest {
 
             // Emit some counters
             for (var i = 0; i < 100; i++) {
-                counter.inc(i, "200");
+                counter.inc("200", i);
             }
-            counter.inc(2200, "400");
-            counter.inc(1120, "401");
-            counter.inc(1320, "403");
-            counter.inc(1105, "500");
+            counter.inc("400", 2200);
+            counter.inc("401", 1120);
+            counter.inc("403", 1320);
+            counter.inc("500", 1105);
+            counter.inc("500");
+
+            var basicCounter = metrics.counter("basic_counter");
+            for (var i = 0; i < 50; i++) {
+                basicCounter.inc(i);
+            }
 
             // Emit some distributions
             for (var i = 0; i < 128; i++) {
@@ -117,6 +126,28 @@ public class MetricsApiTest {
 
             metrics.flush();
             System.out.println("Time series created successfully.");
+
+            // Schedule regular metrics production, 60K points / second... in 60 threads...
+            var threads = 60;
+            var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
+                    .setDaemon(false)
+                    .setNameFormat("worker-%d")
+                    .build());
+            for (var i = 0; i < threads; i++) {
+                var n = i;
+                scheduler.scheduleAtFixedRate(() -> {
+                    var startTime = System.nanoTime();
+
+                    var maxDelay = 50 + Math.random() * 250;
+                    for (var j = 0; j < 1_000; j++) {
+                        var delay = Math.random() * maxDelay;
+                        deserializedDistribution4.update((long) delay);
+                    }
+
+                    var elapsedNanos = System.nanoTime() - startTime;
+                    System.out.printf("Submitted 1,000 samples from %d in %.3f ms%n", n, elapsedNanos / 1e6d);
+                }, 1, 1, TimeUnit.SECONDS);
+            }
         }
     }
 }

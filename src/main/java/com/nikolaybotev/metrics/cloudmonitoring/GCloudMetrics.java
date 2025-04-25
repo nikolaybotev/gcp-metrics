@@ -8,23 +8,25 @@ import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.TimeSeries;
 import com.nikolaybotev.metrics.Counter;
+import com.nikolaybotev.metrics.CounterWithLabel;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.GCloudCounterAggregator;
-import com.nikolaybotev.metrics.cloudmonitoring.counter.LabeledCounterAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.HistogramBucketAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.ToBucketOptions;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
+import com.nikolaybotev.metrics.cloudmonitoring.util.RetryOnExceptions;
 import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableLazy;
 import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,7 +34,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     @Serial
     private static final long serialVersionUID = 7949282012082034388L;
 
-    private static final SerializableSupplier<MetricServiceSettings> DEFAULT_METRICS_SERVICE_SETTINGS_SUPPLIER =
+    private static final SerializableSupplier<MetricServiceSettings> DEFAULT_METRICS_SERVICE_SETTINGS =
             new SerializableSupplier<>() {
                 @Override
                 public MetricServiceSettings getValue() {
@@ -45,9 +47,12 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
                 @Serial
                 private Object readResolve() {
-                    return DEFAULT_METRICS_SERVICE_SETTINGS_SUPPLIER;
+                    return DEFAULT_METRICS_SERVICE_SETTINGS;
                 }
             };
+    private static final Duration DEFAULT_EMIT_INTERVAL = Duration.ofSeconds(10);
+    private static final RetryOnExceptions DEFAULT_EMIT_RETRY_POLICY =
+            new RetryOnExceptions(Duration.ofSeconds(5), 3, Duration.ofMillis(250));
 
     private static final ConcurrentHashMap<GCloudMetrics, GCloudMetrics> cache = new ConcurrentHashMap<>();
 
@@ -55,25 +60,33 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private final CreateTimeSeriesRequest requestTemplate;
     private final MonitoredResource resource;
     private final String metricsPrefix;
+    private final Duration emitInterval;
+    private final RetryOnExceptions emitRetryPolicy;
 
     private final SerializableLazy<GCloudMetricsEmitter> emitter;
     private transient ConcurrentHashMap<String, GCloudCounter> counters;
+    private transient ConcurrentHashMap<String, GCloudCounterWithLabel> countersWithLabel;
     private transient ConcurrentHashMap<String, GCloudDistribution> distributions;
 
     public GCloudMetrics(CreateTimeSeriesRequest requestTemplate,
                          MonitoredResource resource,
                          String metricsPrefix) {
-        this(DEFAULT_METRICS_SERVICE_SETTINGS_SUPPLIER, requestTemplate, resource, metricsPrefix);
+        this(DEFAULT_METRICS_SERVICE_SETTINGS, requestTemplate, resource, metricsPrefix, DEFAULT_EMIT_INTERVAL,
+                DEFAULT_EMIT_RETRY_POLICY);
     }
 
     public GCloudMetrics(SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier,
                          CreateTimeSeriesRequest requestTemplate,
                          MonitoredResource resource,
-                         String metricsPrefix) {
+                         String metricsPrefix,
+                         Duration emitInterval,
+                         RetryOnExceptions emitRetryPolicy) {
         this.metricServiceSettingsSupplier = metricServiceSettingsSupplier;
         this.requestTemplate = requestTemplate;
         this.resource = resource;
         this.metricsPrefix = metricsPrefix;
+        this.emitInterval = emitInterval;
+        this.emitRetryPolicy = emitRetryPolicy;
 
         this.emitter = new SerializableLazy<>(this::createEmitter);
 
@@ -83,7 +96,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private GCloudMetricsEmitter createEmitter() {
         try {
             var client = MetricServiceClient.create(metricServiceSettingsSupplier.getValue());
-            return new GCloudMetricsEmitter(client, requestTemplate);
+            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy);
         } catch (IOException ex) {
             throw new RuntimeException("Error creating client.", ex);
         }
@@ -102,8 +115,13 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     @Override
-    public Counter counter(String name, @Nullable String labelKey) {
-        return getCounter(name, labelKey);
+    public Counter counter(String name) {
+        return getCounter(name);
+    }
+
+    @Override
+    public CounterWithLabel counterWithLabel(String name, String labelKey) {
+        return getCounterWithLabel(name, labelKey);
     }
 
     @Override
@@ -111,18 +129,27 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         return getDistribution(name, unit, buckets);
     }
 
-    GCloudCounter getCounter(String name, @Nullable String labelKey) {
+    GCloudCounter getCounter(String name) {
         return counters.computeIfAbsent(name, key -> {
-            var lazyAggregators = new SerializableLazy<>(() -> new LabeledCounterAggregators(labelValue -> {
-                if (labelKey == null && labelValue != null) {
-                    throw new IllegalArgumentException("labelKey not provided.");
-                }
-
+            var lazyAggregators = new SerializableLazy<>(() -> {
                 var aggregator = new CounterAggregator();
                 Metric.Builder metric = createMetric(name);
-                if (labelKey != null && labelValue != null) {
-                    metric.putLabels(labelKey, labelValue);
-                }
+                var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
+                var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
+
+                emitter.getValue().addAggregator(gcloudAggregator);
+                return aggregator;
+            });
+
+            return new GCloudCounter(this, name, lazyAggregators);
+        });
+    }
+
+    GCloudCounterWithLabel getCounterWithLabel(String name, String labelKey) {
+        return countersWithLabel.computeIfAbsent(name, key -> {
+            var lazyAggregators = new SerializableLazy<>(() -> new CounterWithLabelAggregators(labelValue -> {
+                var aggregator = new CounterAggregator();
+                var metric = createMetric(name).putLabels(labelKey, labelValue);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
                 var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
 
@@ -130,7 +157,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
                 return aggregator;
             }));
 
-            return new GCloudCounter(this, name, labelKey, lazyAggregators);
+            return new GCloudCounterWithLabel(this, name, labelKey, lazyAggregators);
         });
     }
 
@@ -181,6 +208,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     private void initialize() {
         this.counters = new ConcurrentHashMap<>();
+        this.countersWithLabel = new ConcurrentHashMap<>();
         this.distributions = new ConcurrentHashMap<>();
         cache.put(this, this);
     }
