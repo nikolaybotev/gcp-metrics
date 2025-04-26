@@ -10,9 +10,9 @@ import java.util.stream.LongStream;
 public class GCloudDistributionAggregator implements GCloudMetricAggregator {
     private final TimeSeries timeSeriesTemplate;
     private final Distribution.BucketOptions bucketOptions;
-    private final HistogramBucketAggregator aggregator;
+    private final HistogramReader aggregator;
 
-    public GCloudDistributionAggregator(TimeSeries timeSeriesTemplate, Distribution.BucketOptions bucketOptions, HistogramBucketAggregator aggregator) {
+    public GCloudDistributionAggregator(TimeSeries timeSeriesTemplate, Distribution.BucketOptions bucketOptions, HistogramReader aggregator) {
         this.timeSeriesTemplate = timeSeriesTemplate;
         this.bucketOptions = bucketOptions;
         this.aggregator = aggregator;
