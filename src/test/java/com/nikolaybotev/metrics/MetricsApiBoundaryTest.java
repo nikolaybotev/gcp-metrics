@@ -3,6 +3,7 @@ package com.nikolaybotev.metrics;
 import com.google.api.MonitoredResource;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
+import com.nikolaybotev.metrics.buckets.ExponentialBuckets;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class MetricsApiBoundaryTest {
                 .build();
 
         try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
-            var distribution = metrics.distribution("test_distribution_boundary", 10, 3);
+            var distribution = metrics.distribution("test_distribution_boundary", new ExponentialBuckets(4, 2, 1));
 
             // Emit some distributions
             distribution.update(-15);

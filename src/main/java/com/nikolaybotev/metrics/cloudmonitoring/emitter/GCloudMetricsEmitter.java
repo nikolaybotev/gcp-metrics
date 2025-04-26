@@ -54,7 +54,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
         this.emitListeners = List.copyOf(emitListeners);
 
         this.emitAttempts = metrics.counterWithLabel("gcp_metrics/emit_attempts", "status");
-        this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 0, 20, 50);
+        this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 20, 50);
 
         this.emitTimer = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()

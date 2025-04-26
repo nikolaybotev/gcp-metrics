@@ -139,8 +139,8 @@ public class MetricsApiTest {
 
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
-            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 2_500, 200);
-            var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 0, 10, 200);
+            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 2_500, 200);
+            var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 10, 200);
             var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
             var sampleGauge = deserializedMetrics4.gauge("gauge_thousand_oaks");
             var threads = 100;
