@@ -9,6 +9,7 @@ import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -130,7 +131,7 @@ public class MetricsApiTest {
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 200);
-            var threads = 60;
+            var threads = 20;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
                     .setNameFormat("worker-%d")
@@ -140,14 +141,15 @@ public class MetricsApiTest {
                 scheduler.scheduleAtFixedRate(() -> {
                     var startTime = System.nanoTime();
 
-                    var maxDelay = 50 + Math.random() * 250;
-                    for (var j = 0; j < 1_000; j++) {
-                        var delay = Math.random() * maxDelay;
+                    var rand = new Random();
+                    var maxDelay = 50 + rand.nextDouble() * 250;
+                    for (var j = 0; j < 3_000; j++) {
+                        var delay = rand.nextDouble() * maxDelay;
                         deserializedDistribution4.update((long) delay);
                     }
 
                     var elapsedNanos = System.nanoTime() - startTime;
-                    System.out.printf("Submitted 1,000 samples from %d in %.3f ms%n", n, elapsedNanos / 1e6d);
+                    System.out.printf("Submitted 3,000 samples from %d in %.3f ms%n", n, elapsedNanos / 1e6d);
                     submitTimeMicros.update(elapsedNanos / 1_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }

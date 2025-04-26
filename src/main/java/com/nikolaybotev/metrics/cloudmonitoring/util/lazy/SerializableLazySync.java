@@ -1,10 +1,12 @@
-package com.nikolaybotev.metrics.cloudmonitoring.util;
+package com.nikolaybotev.metrics.cloudmonitoring.util.lazy;
+
+import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.function.Consumer;
 
-public class SerializableLazySync<T> implements Serializable {
+public class SerializableLazySync<T> implements SerializableLazy<T> {
     @Serial
     private static final long serialVersionUID = -73562165381170835L;
 
@@ -18,6 +20,7 @@ public class SerializableLazySync<T> implements Serializable {
         this.supplier = supplier;
     }
 
+    @Override
     public T getValue() {
         synchronized (lock) {
             if (value == null) {
@@ -27,6 +30,7 @@ public class SerializableLazySync<T> implements Serializable {
         }
     }
 
+    @Override
     public void apply(Consumer<T> f) {
         synchronized (lock) {
             if (value != null) {
@@ -35,6 +39,7 @@ public class SerializableLazySync<T> implements Serializable {
         }
     }
 
+    @Override
     public void clear() {
         synchronized (lock) {
             value = null;

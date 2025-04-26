@@ -1,23 +1,22 @@
 package com.nikolaybotev.metrics.cloudmonitoring.util;
 
+import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.FastReadWriteLock;
+import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazyFast;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.random.RandomGenerator;
 
 public class SerializableLazyTest {
     @Test
     public void readWriteLock_performanceTest() {
         var randomClearThreshold = 0.999999;
         var loadingCounter = new AtomicInteger();
-        var lazy = new SerializableLazy<>(() -> {
+        var lazy = new SerializableLazyFast<>(() -> {
             System.out.printf("Loading %d...", loadingCounter.incrementAndGet());
             var result = computePi(1_000);
             System.out.println(" done.");

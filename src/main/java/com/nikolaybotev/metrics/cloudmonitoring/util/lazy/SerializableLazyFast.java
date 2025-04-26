@@ -1,12 +1,14 @@
-package com.nikolaybotev.metrics.cloudmonitoring.util;
+package com.nikolaybotev.metrics.cloudmonitoring.util.lazy;
+
+import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.function.Consumer;
 
-public class SerializableLazy<T> implements Serializable {
+public class SerializableLazyFast<T> implements SerializableLazy<T> {
     @Serial
-    private static final long serialVersionUID = -73562165381170835L;
+    private static final long serialVersionUID = -1116779709856742097L;
 
     private final FastReadWriteLock lock = new FastReadWriteLock();
 
@@ -14,10 +16,11 @@ public class SerializableLazy<T> implements Serializable {
 
     private transient volatile T value;
 
-    public SerializableLazy(SerializableSupplier<T> supplier) {
+    public SerializableLazyFast(SerializableSupplier<T> supplier) {
         this.supplier = supplier;
     }
 
+    @Override
     public T getValue() {
         // Optimize for common case - concurrent read lock.
         try (var ignored = lock.acquireReadLock()) {
@@ -36,6 +39,7 @@ public class SerializableLazy<T> implements Serializable {
         }
     }
 
+    @Override
     public void apply(Consumer<T> f) {
         try (var ignored = lock.acquireReadLock()) {
             if (value != null) {
@@ -44,6 +48,7 @@ public class SerializableLazy<T> implements Serializable {
         }
     }
 
+    @Override
     public void clear() {
         try (var ignored = lock.acquireWriteLock()) {
             value = null;
