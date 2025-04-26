@@ -131,25 +131,32 @@ public class MetricsApiTest {
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 200);
+            var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
             var threads = 20;
+            var samplesPerThread = 200_000;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
                     .setNameFormat("worker-%d")
                     .build());
+            var localRandom = ThreadLocal.withInitial(Random::new);
             for (var i = 0; i < threads; i++) {
                 var n = i;
                 scheduler.scheduleAtFixedRate(() -> {
                     var startTime = System.nanoTime();
 
-                    var rand = new Random();
-                    var maxDelay = 50 + rand.nextDouble() * 250;
-                    for (var j = 0; j < 3_000; j++) {
-                        var delay = rand.nextDouble() * maxDelay;
+                    var rand = localRandom.get();
+                    var minDelay = rand.nextDouble() * 6_000;
+                    var maxDelay = rand.nextDouble() * 6_000;
+                    var acc = 0d;
+                    for (var j = 0; j < samplesPerThread; j++) {
+                        var delay = minDelay + rand.nextDouble() * maxDelay;
+                        acc += delay;
                         deserializedDistribution4.update((long) delay);
                     }
+                    sampleSum.inc((long) acc);
 
                     var elapsedNanos = System.nanoTime() - startTime;
-                    System.out.printf("Submitted 3,000 samples from %d in %.3f ms%n", n, elapsedNanos / 1e6d);
+                    System.out.printf("Submitted %,d samples from thread %d in %.3f ms%n", samplesPerThread, n, elapsedNanos / 1e6d);
                     submitTimeMicros.update(elapsedNanos / 1_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }
