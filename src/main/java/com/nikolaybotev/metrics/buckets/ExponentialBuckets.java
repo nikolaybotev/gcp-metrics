@@ -3,10 +3,10 @@ package com.nikolaybotev.metrics.buckets;
 public record ExponentialBuckets(int numFiniteBuckets, double growthFactor, double scale) implements Buckets {
     @Override
     public int bucketForValue(long value) {
-        if (value <= 0) {
+        if (value < scale) {
             return 0;
         }
-        return (int) log(growthFactor, value / scale) + 1;
+        return Math.min((int) log(growthFactor, value / scale), numFiniteBuckets) + 1;
     }
 
     @Override
