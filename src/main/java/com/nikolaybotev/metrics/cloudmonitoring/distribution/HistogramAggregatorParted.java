@@ -5,7 +5,7 @@ import com.nikolaybotev.metrics.buckets.Buckets;
 import java.util.Arrays;
 
 public class HistogramAggregatorParted implements HistogramAggregator {
-    private static final int bins = Runtime.getRuntime().availableProcessors();
+    private static final int bins = Runtime.getRuntime().availableProcessors() * 4;
     private static final ThreadLocal<Integer> bin = ThreadLocal.withInitial(() -> Thread.currentThread().hashCode() % bins);
 
     private final HistogramAggregator[] workers = new HistogramAggregator[bins];

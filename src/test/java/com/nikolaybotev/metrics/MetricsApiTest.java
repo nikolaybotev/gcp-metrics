@@ -131,11 +131,11 @@ public class MetricsApiTest {
 
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
-            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 100);
+            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 0, 10, 200);
             var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
-            var threads = 40;
-            var samplesPerThread = 100_000;
+            var threads = 60;
+            var samplesPerThread = 1_000;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
                     .setNameFormat("worker-%d")
@@ -162,7 +162,7 @@ public class MetricsApiTest {
                     var elapsedNanos = System.nanoTime() - startTime;
                     System.out.printf("Submitted %,d samples from thread %d in %.3f ms%n", samplesPerThread, n, elapsedNanos / 1e6d);
                     submitTimeMicros.update(elapsedNanos / 1_000);
-                    //submitTimeMillis.update(elapsedNanos / 1_000_000);
+                    submitTimeMillis.update(elapsedNanos / 1_000_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }
         }
