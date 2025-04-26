@@ -2,6 +2,7 @@ package com.nikolaybotev.metrics;
 
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
+import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
 
 import java.io.Serializable;
 
@@ -25,4 +26,8 @@ public interface Metrics extends Serializable {
     default Distribution distribution(String name, long step, int count) {
         return distribution(name, "", 0, step, count);
     }
+
+    void addEmitListener(SerializableRunnable listener);
+
+    void flush();
 }

@@ -110,10 +110,12 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         }
     }
 
-    public void addEmitListener(SerializableRunnable r) {
-        emitListeners.add(r);
+    @Override
+    public void addEmitListener(SerializableRunnable listener) {
+        emitListeners.add(listener);
     }
 
+    @Override
     public void flush() {
         emitter.apply(GCloudMetricsEmitter::emit);
     }

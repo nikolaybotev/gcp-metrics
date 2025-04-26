@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
+import com.nikolaybotev.metrics.jmx.JmxMetrics;
 
 import java.io.*;
 import java.lang.management.*;
@@ -132,13 +133,16 @@ public class MetricsApiTest {
             metrics.flush();
             System.out.println("Time series created successfully.");
 
+            // Print and schedule mem stat metric collection
             printMemStats();
+            JmxMetrics.emitAllStatisticsTo(deserializedMetrics4);
 
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 0, 10, 200);
             var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
+            var sampleGauge = deserializedMetrics4.gauge("gauge_thousand_oaks");
             var threads = 100;
             var samplesPerThread = 100_000;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
@@ -164,6 +168,7 @@ public class MetricsApiTest {
                         deserializedDistribution4.update((long) delay);
                     }
                     sampleSum.inc((long) acc + localAtomic.addAndGet((int) acc % 100));
+                    sampleGauge.emit((long) acc);
 
                     var elapsedNanos = System.nanoTime() - startTime;
                     System.out.printf("Submitted %,d samples from thread %d in %.3f ms%n", samplesPerThread, n, elapsedNanos / 1e6d);
@@ -190,7 +195,8 @@ public class MetricsApiTest {
         List<MemoryPoolMXBean> memoryPoolMXBeans = ManagementFactory.getMemoryPoolMXBeans();
         for (MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
             MemoryUsage usage = memoryPoolMXBean.getUsage();
-            System.out.println("Memory Pool: " + memoryPoolMXBean.getName());
+            var sanitizedName = sanitizeName(memoryPoolMXBean.getName());
+            System.out.println("Memory Pool: " + memoryPoolMXBean.getName() + " (" + sanitizedName + ")");
             System.out.println("  Initial: " + usage.getInit() + " bytes");
             System.out.println("  Used: " + usage.getUsed() + " bytes");
             System.out.println("  Committed: " + usage.getCommitted() + " bytes");
@@ -203,10 +209,15 @@ public class MetricsApiTest {
 
         System.out.println("Garbage Collector Statistics:");
         for (GarbageCollectorMXBean gcBean : gcBeans) {
-            System.out.println("Name: " + gcBean.getName());
+            var sanitizedName = sanitizeName(gcBean.getName());
+            System.out.println("Name: " + gcBean.getName() + " (" + sanitizedName + ")");
             System.out.println("  Number of Collections: " + gcBean.getCollectionCount());
             System.out.println("  Total Time (ms): " + gcBean.getCollectionTime());
             System.out.println();
         }
+    }
+
+    private static String sanitizeName(String name) {
+        return name.toLowerCase().replaceAll("[^a-z0-9]", "_");
     }
 }
