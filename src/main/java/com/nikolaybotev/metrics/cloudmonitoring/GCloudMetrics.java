@@ -18,6 +18,7 @@ import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudBucketOptions
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl.DistributionAggregatorParted;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
+import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableSupplier;
@@ -27,8 +28,10 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GCloudMetrics implements Metrics, AutoCloseable {
     @Serial
@@ -63,7 +66,9 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private final Duration emitInterval;
     private final RetryOnExceptions emitRetryPolicy;
 
+    private final List<SerializableRunnable> emitListeners;
     private final SerializableLazy<GCloudMetricsEmitter> emitter;
+
     private transient ConcurrentHashMap<String, GCloudCounter> counters;
     private transient ConcurrentHashMap<String, GCloudCounterWithLabel> countersWithLabel;
     private transient ConcurrentHashMap<String, GCloudGauge> gauges;
@@ -90,6 +95,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         this.emitInterval = emitInterval;
         this.emitRetryPolicy = emitRetryPolicy;
 
+        this.emitListeners = new CopyOnWriteArrayList<>();
         this.emitter = new SerializableLazySync<>(this::createEmitter);
 
         initialize();
@@ -98,10 +104,14 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private GCloudMetricsEmitter createEmitter() {
         try {
             var client = MetricServiceClient.create(metricServiceSettingsSupplier.getValue());
-            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, this);
+            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, emitListeners, this);
         } catch (IOException ex) {
             throw new RuntimeException("Error creating client.", ex);
         }
+    }
+
+    public void addEmitListener(SerializableRunnable r) {
+        emitListeners.add(r);
     }
 
     public void flush() {

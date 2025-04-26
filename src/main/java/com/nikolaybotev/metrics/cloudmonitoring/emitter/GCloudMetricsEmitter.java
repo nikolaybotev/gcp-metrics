@@ -10,12 +10,14 @@ import com.google.protobuf.util.Timestamps;
 import com.nikolaybotev.metrics.CounterWithLabel;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
+import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
 import com.nikolaybotev.metrics.cloudmonitoring.util.retry.RetryOnExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,21 +32,26 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     private final CreateTimeSeriesRequest requestTemplate;
     private final Duration emitInterval;
     private final RetryOnExceptions retryOnExceptions;
+    private final List<SerializableRunnable> emitListeners;
+
     private final CounterWithLabel emitAttempts;
     private final Distribution emitLatencyMs;
 
     private final List<GCloudMetricAggregator> aggregators = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService emitTimer;
+    private final ScheduledExecutorService emitListenerTimer;
 
     public GCloudMetricsEmitter(MetricServiceClient client,
                                 CreateTimeSeriesRequest requestTemplate,
                                 Duration emitInterval,
                                 RetryOnExceptions retryOnExceptions,
+                                Collection<SerializableRunnable> emitListeners,
                                 Metrics metrics) {
         this.client = client;
         this.requestTemplate = requestTemplate;
         this.emitInterval = emitInterval;
         this.retryOnExceptions = retryOnExceptions;
+        this.emitListeners = List.copyOf(emitListeners);
 
         this.emitAttempts = metrics.counterWithLabel("gcp_metrics/emit_attempts", "status");
         this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 0, 20, 50);
@@ -54,22 +61,44 @@ public class GCloudMetricsEmitter implements AutoCloseable {
                         .setDaemon(true)
                         .setNameFormat("gcloud-metrics-emitter-%d")
                         .build());
+        this.emitListenerTimer = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder()
+                        .setDaemon(true)
+                        .setNameFormat("gcloud-metrics-emit-listener-%d")
+                        .build());
 
         startEmitTimer();
     }
 
     private void startEmitTimer() {
         logger.info("Scheduled metrics emitter every {} seconds.", emitInterval.toSeconds());
-        this.emitTimer.scheduleAtFixedRate(() -> {
+        this.emitTimer.scheduleAtFixedRate(this::onEmitTimer,
+                emitInterval.toMillis(), emitInterval.toMillis(), TimeUnit.MILLISECONDS);
+        if (!this.emitListeners.isEmpty()) {
+            // Start the emit listener timer right away, but run it at an offset - 1/10th of the emit interval.
+            this.emitListenerTimer.scheduleAtFixedRate(this::onEmitListenerTimer,
+                    emitInterval.toMillis() / 10, emitInterval.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void onEmitTimer() {
+        try {
+            emit();
+            emitAttempts.inc("success");
+        } catch (Exception ex) {
+            logger.warn("Failed to emit metrics.", ex);
+            emitAttempts.inc(ex.getClass().getSimpleName());
+        }
+    }
+
+    private void onEmitListenerTimer() {
+        for (var listener : emitListeners) {
             try {
-                emit();
-                emitAttempts.inc("success");
+                listener.run();
             } catch (Exception ex) {
-                logger.warn("Failed to emit metrics.", ex);
-                emitAttempts.inc(ex.getClass().getSimpleName());
+                logger.warn("Listener exception", ex);
             }
-        },
-        emitInterval.toMillis(), emitInterval.toMillis(), TimeUnit.MILLISECONDS);
+        }
     }
 
     public void addAggregator(GCloudMetricAggregator aggregator) {
