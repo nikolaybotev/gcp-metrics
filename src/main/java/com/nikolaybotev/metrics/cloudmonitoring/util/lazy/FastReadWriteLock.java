@@ -1,9 +1,13 @@
 package com.nikolaybotev.metrics.cloudmonitoring.util.lazy;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FastReadWriteLock implements Serializable {
+    @Serial
+    private static final long serialVersionUID = -8026184368166163180L;
+
     private final AtomicInteger counter = new AtomicInteger();
     private final ReadLock readLock = new ReadLock();
     private final WriteLock writeLock = new WriteLock();

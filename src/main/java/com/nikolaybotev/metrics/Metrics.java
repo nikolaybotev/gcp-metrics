@@ -14,6 +14,10 @@ public interface Metrics extends Serializable {
         return distribution(name, unit, new LinearBuckets(start, step, count));
     }
 
+    default Distribution distribution(String name, long start, long step, int count) {
+        return distribution(name, "", start, step, count);
+    }
+
     default Distribution distribution(String name, long step, int count) {
         return distribution(name, "", 0, step, count);
     }

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MetricsApiTest {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -130,15 +131,17 @@ public class MetricsApiTest {
 
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
-            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 200);
+            var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 250, 100);
+            var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 0, 10, 200);
             var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
-            var threads = 20;
-            var samplesPerThread = 200_000;
+            var threads = 40;
+            var samplesPerThread = 100_000;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
                     .setNameFormat("worker-%d")
                     .build());
             var localRandom = ThreadLocal.withInitial(Random::new);
+            var localAtomic = new AtomicInteger();
             for (var i = 0; i < threads; i++) {
                 var n = i;
                 scheduler.scheduleAtFixedRate(() -> {
@@ -151,13 +154,15 @@ public class MetricsApiTest {
                     for (var j = 0; j < samplesPerThread; j++) {
                         var delay = minDelay + rand.nextDouble() * maxDelay;
                         acc += delay;
+                        //localAtomic.addAndGet(2);
                         deserializedDistribution4.update((long) delay);
                     }
-                    sampleSum.inc((long) acc);
+                    sampleSum.inc((long) acc + localAtomic.get());
 
                     var elapsedNanos = System.nanoTime() - startTime;
                     System.out.printf("Submitted %,d samples from thread %d in %.3f ms%n", samplesPerThread, n, elapsedNanos / 1e6d);
                     submitTimeMicros.update(elapsedNanos / 1_000);
+                    //submitTimeMillis.update(elapsedNanos / 1_000_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }
         }

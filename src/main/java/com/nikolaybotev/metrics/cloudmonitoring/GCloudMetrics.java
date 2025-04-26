@@ -23,6 +23,7 @@ import com.nikolaybotev.metrics.cloudmonitoring.util.RetryOnExceptions;
 import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync;
+import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync2;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -164,7 +165,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudDistribution getDistribution(String name, String unit, Buckets buckets) {
         return distributions.computeIfAbsent(name, key -> {
-            var lazyAggregator = new SerializableLazySync<>(() -> {
+            var lazyAggregator = new SerializableLazySync2<>(() -> {
                 var aggregator = new HistogramAggregatorSync(buckets);
                 var metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.DISTRIBUTION)

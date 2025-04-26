@@ -8,6 +8,6 @@ public record LinearBuckets(long start, long step, int count) implements Buckets
 
     @Override
     public int bucketForValue(long value) {
-        return (int) Math.min(Math.max(0, ((value - start) / step) + 1), count + 1);
+        return (int) Math.min(Math.max(0, (value - start + step) / step), count + 1);
     }
 }
