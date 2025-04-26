@@ -157,7 +157,7 @@ public class MetricsApiTest {
                         //localAtomic.addAndGet(2);
                         deserializedDistribution4.update((long) delay);
                     }
-                    sampleSum.inc((long) acc + localAtomic.get());
+                    sampleSum.inc((long) acc + localAtomic.addAndGet((int) acc % 100));
 
                     var elapsedNanos = System.nanoTime() - startTime;
                     System.out.printf("Submitted %,d samples from thread %d in %.3f ms%n", samplesPerThread, n, elapsedNanos / 1e6d);

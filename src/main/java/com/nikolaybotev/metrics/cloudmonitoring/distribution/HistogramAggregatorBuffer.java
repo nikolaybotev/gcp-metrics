@@ -19,7 +19,7 @@ public class HistogramAggregatorBuffer implements HistogramAggregator {
     public HistogramAggregatorBuffer(Buckets bucketsDefinition) {
         this.bucketsDefinition = bucketsDefinition;
 
-        this.buckets = new long[bucketsDefinition.count() + 2];
+        this.buckets = new long[bucketsDefinition.bucketCount()];
     }
 
     @Override

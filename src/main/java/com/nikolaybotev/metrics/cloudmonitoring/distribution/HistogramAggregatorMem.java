@@ -22,7 +22,7 @@ public class HistogramAggregatorMem implements HistogramAggregator {
     public HistogramAggregatorMem(Buckets bucketsDefinition) {
         this.bucketsDefinition = bucketsDefinition;
 
-        this.buckets = new long[bucketsDefinition.count() + 2];
+        this.buckets = new long[bucketsDefinition.bucketCount()];
         Thread sampleProcessor = new ThreadFactoryBuilder().setDaemon(true).build().newThread(() -> {
             //noinspection InfiniteLoopStatement
             do {
@@ -47,7 +47,7 @@ public class HistogramAggregatorMem implements HistogramAggregator {
             var bucket = bucketsDefinition.bucketForValue(value);
             buckets[bucket] += 1;
 
-            // Update count, mean and M2 using Welford's method for accumulating the sum of squared deviations.
+            // Update numSamples, mean and M2 using Welford's method for accumulating the sum of squared deviations.
             numSamples = numSamples + 1;
             var delta = value - mean;
             mean = mean + (delta / numSamples);

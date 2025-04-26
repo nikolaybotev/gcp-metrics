@@ -15,9 +15,7 @@ import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.GCloudCounterAggregator;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.HistogramAggregatorSync;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.ToBucketOptions;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.*;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
 import com.nikolaybotev.metrics.cloudmonitoring.util.RetryOnExceptions;
 import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
@@ -165,7 +163,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     GCloudDistribution getDistribution(String name, String unit, Buckets buckets) {
         return distributions.computeIfAbsent(name, key -> {
             var lazyAggregator = new SerializableLazySync<>(() -> {
-                var aggregator = new HistogramAggregatorSync(buckets);
+                var aggregator = new HistogramAggregatorParted(buckets);
                 var metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.DISTRIBUTION)
                         .setUnit(unit)

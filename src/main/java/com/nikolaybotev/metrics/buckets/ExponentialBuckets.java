@@ -10,7 +10,7 @@ public record ExponentialBuckets(int numFiniteBuckets, double growthFactor, doub
     }
 
     @Override
-    public int count() {
+    public int finiteBucketCount() {
         return numFiniteBuckets;
     }
 
