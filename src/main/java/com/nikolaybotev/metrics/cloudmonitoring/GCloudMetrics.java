@@ -16,13 +16,13 @@ import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.GCloudCounterAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.HistogramAggregatorActor;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.HistogramAggregatorSync;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.ToBucketOptions;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
 import com.nikolaybotev.metrics.cloudmonitoring.util.RetryOnExceptions;
 import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazyFast;
+import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -89,7 +89,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         this.emitInterval = emitInterval;
         this.emitRetryPolicy = emitRetryPolicy;
 
-        this.emitter = new SerializableLazyFast<>(this::createEmitter);
+        this.emitter = new SerializableLazySync<>(this::createEmitter);
 
         initialize();
     }
@@ -132,7 +132,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudCounter getCounter(String name) {
         return counters.computeIfAbsent(name, key -> {
-            var lazyAggregators = new SerializableLazyFast<>(() -> {
+            var lazyAggregators = new SerializableLazySync<>(() -> {
                 var aggregator = new CounterAggregator();
                 Metric.Builder metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
@@ -148,7 +148,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudCounterWithLabel getCounterWithLabel(String name, String labelKey) {
         return countersWithLabel.computeIfAbsent(name, key -> {
-            var lazyAggregators = new SerializableLazyFast<>(() -> new CounterWithLabelAggregators(labelValue -> {
+            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelValue -> {
                 var aggregator = new CounterAggregator();
                 var metric = createMetric(name).putLabels(labelKey, labelValue);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
@@ -164,8 +164,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudDistribution getDistribution(String name, String unit, Buckets buckets) {
         return distributions.computeIfAbsent(name, key -> {
-            var lazyAggregator = new SerializableLazyFast<>(() -> {
-                var aggregator = new HistogramAggregatorActor(buckets);
+            var lazyAggregator = new SerializableLazySync<>(() -> {
+                var aggregator = new HistogramAggregatorSync(buckets);
                 var metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.DISTRIBUTION)
                         .setUnit(unit)
