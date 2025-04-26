@@ -1,21 +1,15 @@
 package com.nikolaybotev.metrics;
 
 import com.google.api.MonitoredResource;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 
-import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MetricsApiBoundaryTest {
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) {
         var projectId = "feelinsosweet";
 
         var name = ProjectName.of(projectId);

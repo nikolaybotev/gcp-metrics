@@ -1,4 +1,4 @@
-package com.nikolaybotev.metrics;
+package com.nikolaybotev.metrics.cloudmonitoring;
 
 import com.google.api.Distribution;
 import com.google.api.Metric;

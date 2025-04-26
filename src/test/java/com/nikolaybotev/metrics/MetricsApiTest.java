@@ -118,6 +118,7 @@ public class MetricsApiTest {
             for (var i = 0; i < 50; i++) {
                 basicCounter.inc(i);
             }
+            basicCounter.inc();
 
             // Emit some distributions
             for (var i = 0; i < 128; i++) {
