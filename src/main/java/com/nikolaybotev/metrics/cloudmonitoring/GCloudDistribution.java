@@ -2,7 +2,7 @@ package com.nikolaybotev.metrics.cloudmonitoring;
 
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.buckets.Buckets;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.HistogramWriter;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.DistributionAggregatorWriter;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
 
 import java.io.Serial;
@@ -21,9 +21,9 @@ public class GCloudDistribution implements Distribution {
 
     private final Buckets buckets;
 
-    private final SerializableLazy<? extends HistogramWriter> aggregator;
+    private final SerializableLazy<? extends DistributionAggregatorWriter> aggregator;
 
-    public GCloudDistribution(GCloudMetrics metrics, String name, String unit, Buckets buckets, SerializableLazy<? extends HistogramWriter> aggregator) {
+    public GCloudDistribution(GCloudMetrics metrics, String name, String unit, Buckets buckets, SerializableLazy<? extends DistributionAggregatorWriter> aggregator) {
         this.metrics = metrics;
         this.name = name;
         this.unit = unit;

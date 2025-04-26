@@ -2,12 +2,12 @@ package com.nikolaybotev.metrics.cloudmonitoring.distribution;
 
 import java.util.Arrays;
 
-public record HistogramBuckets(
+public record DistributionBuckets(
         long[] buckets,
         long numSamples,
         double mean,
         double sumOfSquaredDeviation) {
-    public static HistogramBuckets merge(HistogramBuckets a, HistogramBuckets b) {
+    public static DistributionBuckets merge(DistributionBuckets a, DistributionBuckets b) {
         var numBuckets = a.buckets().length;
         assert b.buckets().length == numBuckets;
 
@@ -20,6 +20,6 @@ public record HistogramBuckets(
                 a.numSamples() * (a.mean() - mean) * (a.mean() - mean) +
                 b.numSamples() * (b.mean() - mean) * (b.mean() - mean);
 
-        return new HistogramBuckets(buckets, numSamples, mean, sumSquaredDeviations);
+        return new DistributionBuckets(buckets, numSamples, mean, sumSquaredDeviations);
     }
 }

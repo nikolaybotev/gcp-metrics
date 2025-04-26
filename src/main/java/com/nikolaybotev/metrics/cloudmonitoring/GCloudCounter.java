@@ -1,7 +1,7 @@
 package com.nikolaybotev.metrics.cloudmonitoring;
 
 import com.nikolaybotev.metrics.Counter;
-import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregatorWriter;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
 
 import java.io.Serial;
@@ -16,9 +16,9 @@ public class GCloudCounter implements Counter {
 
     private final String name;
 
-    private final SerializableLazy<CounterAggregator> aggregator;
+    private final SerializableLazy<? extends CounterAggregatorWriter> aggregator;
 
-    public GCloudCounter(GCloudMetrics metrics, String name, SerializableLazy<CounterAggregator> aggregator) {
+    public GCloudCounter(GCloudMetrics metrics, String name, SerializableLazy<? extends CounterAggregatorWriter> aggregator) {
         this.metrics = metrics;
         this.name = name;
         this.aggregator = aggregator;

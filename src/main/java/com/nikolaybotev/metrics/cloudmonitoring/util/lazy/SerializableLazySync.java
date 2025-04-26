@@ -1,7 +1,5 @@
 package com.nikolaybotev.metrics.cloudmonitoring.util.lazy;
 
-import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableSupplier;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.function.Consumer;

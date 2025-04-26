@@ -6,9 +6,9 @@ import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricAggregator;
 
 public class GCloudCounterAggregator implements GCloudMetricAggregator {
     private final TimeSeries timeSeriesTemplate;
-    private final CounterAggregator aggregator;
+    private final CounterAggregatorReader aggregator;
 
-    public GCloudCounterAggregator(TimeSeries timeSeriesTemplate, CounterAggregator aggregator) {
+    public GCloudCounterAggregator(TimeSeries timeSeriesTemplate, CounterAggregatorReader aggregator) {
         this.timeSeriesTemplate = timeSeriesTemplate;
         this.aggregator = aggregator;
     }

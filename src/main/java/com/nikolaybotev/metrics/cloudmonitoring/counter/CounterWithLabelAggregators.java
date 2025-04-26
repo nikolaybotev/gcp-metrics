@@ -5,15 +5,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 public class CounterWithLabelAggregators {
-    private final Function<String, CounterAggregator> aggregatorFactory;
-    private final ConcurrentMap<String, CounterAggregator> aggregators;
+    private final Function<String, CounterAggregatorWriter> aggregatorFactory;
+    private final ConcurrentMap<String, CounterAggregatorWriter> aggregators;
 
-    public CounterWithLabelAggregators(Function<String, CounterAggregator> aggregatorFactory) {
+    public CounterWithLabelAggregators(Function<String, CounterAggregatorWriter> aggregatorFactory) {
         this.aggregatorFactory = aggregatorFactory;
         this.aggregators = new ConcurrentHashMap<>();
     }
 
-    public CounterAggregator getAggregatorForLabelValue(String labelValue) {
+    public CounterAggregatorWriter getAggregatorForLabelValue(String labelValue) {
         return aggregators.computeIfAbsent(labelValue, aggregatorFactory);
     }
 }

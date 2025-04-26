@@ -1,11 +1,13 @@
-package com.nikolaybotev.metrics.cloudmonitoring.distribution;
+package com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl;
 
 import com.nikolaybotev.metrics.buckets.Buckets;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.DistributionBuckets;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.DistributionAggregator;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class HistogramAggregatorSync implements HistogramAggregator {
+public class DistributionAggregatorSync implements DistributionAggregator {
     private final Buckets bucketsDefinition;
 
     private final long[] buckets;
@@ -16,7 +18,7 @@ public class HistogramAggregatorSync implements HistogramAggregator {
 
     private final Object lock = new Serializable() {};
 
-    public HistogramAggregatorSync(Buckets bucketsDefinition) {
+    public DistributionAggregatorSync(Buckets bucketsDefinition) {
         this.bucketsDefinition = bucketsDefinition;
 
         this.buckets = new long[bucketsDefinition.bucketCount()];
@@ -38,10 +40,10 @@ public class HistogramAggregatorSync implements HistogramAggregator {
     }
 
     @Override
-    public HistogramBuckets getAndClear() {
+    public DistributionBuckets getAndClear() {
         synchronized (lock) {
             // Make a copy
-            var result = new HistogramBuckets(
+            var result = new DistributionBuckets(
                     Arrays.copyOf(buckets, buckets.length), numSamples, mean, sumOfSquaredDeviation);
 
             // Clear

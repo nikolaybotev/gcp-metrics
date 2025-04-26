@@ -3,6 +3,7 @@ package com.nikolaybotev.metrics.cloudmonitoring.distribution;
 import com.google.api.Distribution;
 import com.google.monitoring.v3.TimeSeries;
 import com.google.monitoring.v3.TypedValue;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.DistributionAggregatorReader;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricAggregator;
 
 import java.util.stream.LongStream;
@@ -10,9 +11,9 @@ import java.util.stream.LongStream;
 public class GCloudDistributionAggregator implements GCloudMetricAggregator {
     private final TimeSeries timeSeriesTemplate;
     private final Distribution.BucketOptions bucketOptions;
-    private final HistogramReader aggregator;
+    private final DistributionAggregatorReader aggregator;
 
-    public GCloudDistributionAggregator(TimeSeries timeSeriesTemplate, Distribution.BucketOptions bucketOptions, HistogramReader aggregator) {
+    public GCloudDistributionAggregator(TimeSeries timeSeriesTemplate, Distribution.BucketOptions bucketOptions, DistributionAggregatorReader aggregator) {
         this.timeSeriesTemplate = timeSeriesTemplate;
         this.bucketOptions = bucketOptions;
         this.aggregator = aggregator;

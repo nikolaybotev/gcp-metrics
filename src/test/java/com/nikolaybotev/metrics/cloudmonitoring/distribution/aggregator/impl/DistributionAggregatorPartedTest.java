@@ -1,4 +1,4 @@
-package com.nikolaybotev.metrics.cloudmonitoring.distribution;
+package com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl;
 
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
 import org.junit.jupiter.api.Test;
@@ -9,14 +9,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class HistogramAggregatorPartedTest {
+public class DistributionAggregatorPartedTest {
     @Test
     public void getAndClear_withSameInputsAsSyncAggregator_returnsSameStats() {
         var threads = Runtime.getRuntime().availableProcessors() * 4;
         var tasks = threads * 1_000;
         var bucketsDef = new LinearBuckets(0, 100, 100);
-        var baselineAggregator = new HistogramAggregatorSync(bucketsDef);
-        var partedAggregator = new HistogramAggregatorParted(bucketsDef);
+        var baselineAggregator = new DistributionAggregatorSync(bucketsDef);
+        var partedAggregator = new DistributionAggregatorParted(bucketsDef);
 
         var sum = new AtomicLong();
         try (var executor = Executors.newFixedThreadPool(threads)) {
