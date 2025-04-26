@@ -7,22 +7,21 @@ import com.google.cloud.monitoring.v3.MetricServiceClient;
 import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.TimeSeries;
-import com.nikolaybotev.metrics.Counter;
-import com.nikolaybotev.metrics.CounterWithLabel;
-import com.nikolaybotev.metrics.Distribution;
-import com.nikolaybotev.metrics.Metrics;
+import com.nikolaybotev.metrics.*;
 import com.nikolaybotev.metrics.buckets.Buckets;
-import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.CounterAggregatorAtomic;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.GCloudCounterAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.CounterAggregatorAtomic;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.CounterAggregatorParted;
-import com.nikolaybotev.metrics.cloudmonitoring.distribution.*;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.GaugeAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudBucketOptions;
+import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl.DistributionAggregatorParted;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
-import com.nikolaybotev.metrics.cloudmonitoring.util.retry.RetryOnExceptions;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableSupplier;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
 import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync;
+import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableSupplier;
+import com.nikolaybotev.metrics.cloudmonitoring.util.retry.RetryOnExceptions;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -67,6 +66,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private final SerializableLazy<GCloudMetricsEmitter> emitter;
     private transient ConcurrentHashMap<String, GCloudCounter> counters;
     private transient ConcurrentHashMap<String, GCloudCounterWithLabel> countersWithLabel;
+    private transient ConcurrentHashMap<String, GCloudGauge> gauges;
+    private transient ConcurrentHashMap<String, GCloudGaugeWithLabel> gaugesWithLabel;
     private transient ConcurrentHashMap<String, GCloudDistribution> distributions;
 
     public GCloudMetrics(CreateTimeSeriesRequest requestTemplate,
@@ -126,6 +127,16 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     @Override
+    public Gauge gauge(String name) {
+        return getGauge(name);
+    }
+
+    @Override
+    public GaugeWithLabel gaugeWithLabel(String name, String labelKey) {
+        return getGaugeWithLabel(name, labelKey);
+    }
+
+    @Override
     public Distribution distribution(String name, String unit, Buckets buckets) {
         return getDistribution(name, unit, buckets);
     }
@@ -134,7 +145,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         return counters.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(() -> {
                 var aggregator = new CounterAggregatorParted();
-                Metric.Builder metric = createMetric(name);
+                var metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
                 var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
 
@@ -159,6 +170,38 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
             }));
 
             return new GCloudCounterWithLabel(this, name, labelKey, lazyAggregators);
+        });
+    }
+
+    GCloudGauge getGauge(String name) {
+        return gauges.computeIfAbsent(name, key -> {
+            var lazyAggregators = new SerializableLazySync<>(() -> {
+                var aggregator = new GaugeAggregator();
+                var metric = createMetric(name);
+                var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
+                var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
+
+                emitter.getValue().addAggregator(gcloudAggregator);
+                return aggregator;
+            });
+
+            return new GCloudGauge(this, name, lazyAggregators);
+        });
+    }
+
+    GCloudGaugeWithLabel getGaugeWithLabel(String name, String labelKey) {
+        return gaugesWithLabel.computeIfAbsent(name, key -> {
+            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelValue -> {
+                var aggregator = new GaugeAggregator();
+                var metric = createMetric(name).putLabels(labelKey, labelValue);
+                var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
+                var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
+
+                emitter.getValue().addAggregator(gcloudAggregator);
+                return aggregator;
+            }));
+
+            return new GCloudGaugeWithLabel(this, name, labelKey, lazyAggregators);
         });
     }
 
@@ -210,6 +253,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private void initialize() {
         this.counters = new ConcurrentHashMap<>();
         this.countersWithLabel = new ConcurrentHashMap<>();
+        this.gauges = new ConcurrentHashMap<>();
+        this.gaugesWithLabel = new ConcurrentHashMap<>();
         this.distributions = new ConcurrentHashMap<>();
         cache.put(this, this);
     }
