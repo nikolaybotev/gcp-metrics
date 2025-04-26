@@ -1,6 +1,6 @@
 package com.nikolaybotev.metrics.cloudmonitoring.emitter;
 
-import com.google.api.gax.rpc.InternalException;
+import com.google.api.gax.rpc.*;
 import com.google.cloud.monitoring.v3.MetricServiceClient;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
@@ -46,7 +46,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
         this.emitInterval = emitInterval;
         this.retryOnExceptions = retryOnExceptions;
 
-        this.emitAttempts = metrics.counterWithLabel("gcp_metrics/emit_attempts", "status");;
+        this.emitAttempts = metrics.counterWithLabel("gcp_metrics/emit_attempts", "status");
         this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 0, 20, 50);
 
         this.emitTimer = Executors.newSingleThreadScheduledExecutor(
@@ -106,7 +106,10 @@ public class GCloudMetricsEmitter implements AutoCloseable {
 
         var elapsedMillis = retryOnExceptions.run(
                 () -> client.createTimeSeries(request.build()),
-                Set.of(InternalException.class));
+                Set.of(InternalException.class,
+                        UnavailableException.class,
+                        AbortedException.class,
+                        DataLossException.class));
         logger.info("Emitted {} time series in {} ms.", request.getTimeSeriesCount(), elapsedMillis);
         emitLatencyMs.update(elapsedMillis);
     }
