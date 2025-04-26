@@ -12,9 +12,10 @@ import com.nikolaybotev.metrics.CounterWithLabel;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.buckets.Buckets;
-import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.CounterAggregatorAtomic;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.GCloudCounterAggregator;
+import com.nikolaybotev.metrics.cloudmonitoring.counter.impl.CounterAggregatorParted;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.*;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl.DistributionAggregatorParted;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
@@ -132,7 +133,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     GCloudCounter getCounter(String name) {
         return counters.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(() -> {
-                var aggregator = new CounterAggregator();
+                var aggregator = new CounterAggregatorParted();
                 Metric.Builder metric = createMetric(name);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
                 var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
@@ -148,7 +149,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     GCloudCounterWithLabel getCounterWithLabel(String name, String labelKey) {
         return countersWithLabel.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelValue -> {
-                var aggregator = new CounterAggregator();
+                var aggregator = new CounterAggregatorAtomic();
                 var metric = createMetric(name).putLabels(labelKey, labelValue);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
                 var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);

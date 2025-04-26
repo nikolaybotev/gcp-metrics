@@ -7,7 +7,9 @@ import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 
 import java.io.*;
+import java.lang.management.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -130,13 +132,15 @@ public class MetricsApiTest {
             metrics.flush();
             System.out.println("Time series created successfully.");
 
+            printMemStats();
+
             // Schedule regular metrics production, 60K points / second... in 60 threads...
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 0, 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 0, 10, 200);
             var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
-            var threads = 60;
-            var samplesPerThread = 1_000;
+            var threads = 100;
+            var samplesPerThread = 100_000;
             var scheduler = Executors.newScheduledThreadPool(threads, new ThreadFactoryBuilder()
                     .setDaemon(false)
                     .setNameFormat("worker-%d")
@@ -156,6 +160,7 @@ public class MetricsApiTest {
                         var delay = minDelay + rand.nextDouble() * maxDelay;
                         acc += delay;
                         //localAtomic.addAndGet(2);
+                        sampleSum.inc((long) delay / 100);
                         deserializedDistribution4.update((long) delay);
                     }
                     sampleSum.inc((long) acc + localAtomic.addAndGet((int) acc % 100));
@@ -166,6 +171,42 @@ public class MetricsApiTest {
                     submitTimeMillis.update(elapsedNanos / 1_000_000);
                 }, 1, 1, TimeUnit.SECONDS);
             }
+        }
+    }
+
+    private static void printMemStats() {
+        // Get the MemoryMXBean
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+
+        // Get heap memory usage
+        MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+        System.out.println("Heap Memory Usage:");
+        System.out.println("  Initial: " + heapMemoryUsage.getInit() + " bytes");
+        System.out.println("  Used: " + heapMemoryUsage.getUsed() + " bytes");
+        System.out.println("  Committed: " + heapMemoryUsage.getCommitted() + " bytes");
+        System.out.println("  Max: " + heapMemoryUsage.getMax() + " bytes");
+
+        // Get memory pools
+        List<MemoryPoolMXBean> memoryPoolMXBeans = ManagementFactory.getMemoryPoolMXBeans();
+        for (MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
+            MemoryUsage usage = memoryPoolMXBean.getUsage();
+            System.out.println("Memory Pool: " + memoryPoolMXBean.getName());
+            System.out.println("  Initial: " + usage.getInit() + " bytes");
+            System.out.println("  Used: " + usage.getUsed() + " bytes");
+            System.out.println("  Committed: " + usage.getCommitted() + " bytes");
+            System.out.println("  Max: " + usage.getMax() + " bytes");
+            System.out.println();
+        }
+
+        // Get the list of GarbageCollectorMXBeans
+        List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+
+        System.out.println("Garbage Collector Statistics:");
+        for (GarbageCollectorMXBean gcBean : gcBeans) {
+            System.out.println("Name: " + gcBean.getName());
+            System.out.println("  Number of Collections: " + gcBean.getCollectionCount());
+            System.out.println("  Total Time (ms): " + gcBean.getCollectionTime());
+            System.out.println();
         }
     }
 }
