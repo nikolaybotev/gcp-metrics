@@ -10,19 +10,23 @@ public class SerializableLazySync<T> implements SerializableLazy<T> {
     @Serial
     private static final long serialVersionUID = -73562165381170835L;
 
-    private final Serializable lock = new Serializable() {};
+    private final Serializable writeLock = new Serializable() {};
 
-    private final SerializableSupplier<T> supplier;
+    private final SerializableSupplier<? extends T> supplier;
 
-    private transient T value;
+    private transient volatile T value;
 
-    public SerializableLazySync(SerializableSupplier<T> supplier) {
+    public SerializableLazySync(SerializableSupplier<? extends T> supplier) {
         this.supplier = supplier;
     }
 
     @Override
     public T getValue() {
-        synchronized (lock) {
+        var current = value;
+        if (current != null) {
+            return current;
+        }
+        synchronized (writeLock) {
             if (value == null) {
                 value = supplier.getValue();
             }
@@ -32,16 +36,15 @@ public class SerializableLazySync<T> implements SerializableLazy<T> {
 
     @Override
     public void apply(Consumer<? super T> f) {
-        synchronized (lock) {
-            if (value != null) {
-                f.accept(value);
-            }
+        var current = value;
+        if (current != null) {
+            f.accept(current);
         }
     }
 
     @Override
     public void clear() {
-        synchronized (lock) {
+        synchronized (writeLock) {
             value = null;
         }
     }
