@@ -4,9 +4,13 @@ import java.io.Serializable;
 
 public interface Buckets extends Serializable {
     int bucketForValue(long value);
-    int finiteBucketCount();
 
+    int numFiniteBuckets();
+
+    /**
+     * @return the total number of buckets including finite and overflow buckets
+     */
     default int bucketCount() {
-        return finiteBucketCount() + 2;
+        return numFiniteBuckets() + 2;
     }
 }
