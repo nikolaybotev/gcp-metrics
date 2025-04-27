@@ -3,6 +3,7 @@ package com.nikolaybotev.metrics;
 import com.google.api.MonitoredResource;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
+import com.nikolaybotev.metrics.buckets.ExplicitBuckets;
 import com.nikolaybotev.metrics.buckets.ExponentialBuckets;
 import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
 
@@ -117,6 +118,44 @@ public class MetricsApiBoundaryTest {
             for (var i = 48; i < 196; i++) {
                 exponential.update(i);
             }
+
+            //
+            // Explicit Distribution:
+            // * Bounds (b) = 10, 20, 40, 90
+            //
+            // (-INF, 10), [10, 20), [40, 90), [90, +INF)
+            //      ^         ^         ^         ^
+            //      0         1         2         3
+            //
+            var explicit = metrics.distribution("test_distribution_boundary/explicit",
+                    new ExplicitBuckets(10, 20, 40, 90));
+
+            // Bucket 0 - (-INF, 10) - 3 samples
+            explicit.update(0);
+            explicit.update(0);
+            explicit.update(5);
+
+            // Bucket 1 - [10, 20) - 6 samples
+            explicit.update(10);
+            explicit.update(11);
+            explicit.update(11);
+            explicit.update(15);
+            explicit.update(18);
+            explicit.update(19);
+
+            // Bucket 2 - [20, 40) - 3 samples
+            explicit.update(20);
+            explicit.update(25);
+            explicit.update(39);
+
+            // Bucket 3 - [40, 90) - 4 samples
+            explicit.update(40);
+            explicit.update(79);
+            explicit.update(80);
+            explicit.update(89);
+
+            // Bucket 4 - [90, +INF) - 1 sample
+            explicit.update(189);
 
             metrics.flush();
             System.out.println("Time series created successfully.");
