@@ -40,7 +40,7 @@ public class MetricsApiBoundaryTest {
             //     ^         ^         ^         ^         ^
             //     0         1         2         3         4
             //
-            var linear = metrics.distribution("test_distribution_boundary", 10, 3);
+            var linear = metrics.distribution("test_distribution_boundary/linear", 10, 3);
 
             // Emit some samples to the linear distribution
 

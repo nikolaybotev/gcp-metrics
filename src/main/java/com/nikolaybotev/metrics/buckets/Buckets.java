@@ -2,7 +2,7 @@ package com.nikolaybotev.metrics.buckets;
 
 import java.io.Serializable;
 
-public interface Buckets extends Serializable {
+public sealed interface Buckets extends Serializable permits ExponentialBuckets, LinearBuckets {
     int bucketForValue(long value);
 
     int numFiniteBuckets();
