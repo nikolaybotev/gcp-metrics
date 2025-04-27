@@ -1,6 +1,7 @@
 package com.nikolaybotev.metrics.buckets;
 
 import java.io.Serial;
+import java.util.Arrays;
 
 /**
  * Linear bucket distribution.
@@ -40,5 +41,11 @@ public record LinearBuckets(double offset, double width, int numFiniteBuckets) i
     @Override
     public int bucketForValue(long value) {
         return (int) Math.min(Math.max(0, (value - offset + width) / width), numFiniteBuckets + 1);
+    }
+
+    public ExplicitBuckets toExplicitBuckets() {
+        var bounds = new double[numFiniteBuckets + 1];
+        Arrays.setAll(bounds, i -> offset + width * i);
+        return new ExplicitBuckets(bounds);
     }
 }

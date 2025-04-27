@@ -10,14 +10,14 @@ import com.nikolaybotev.metrics.buckets.LinearBuckets;
 public final class GCloudBucketOptions {
     public static Distribution.BucketOptions from(Buckets buckets) {
         return switch (buckets) {
-            case LinearBuckets(double start, double step, int count) ->
-                    Distribution.BucketOptions.newBuilder()
-                            .setLinearBuckets(Distribution.BucketOptions.Linear.newBuilder()
-                                    .setNumFiniteBuckets(count)
-                                    .setWidth(step)
-                                    .setOffset(start)
-                                    .build())
-                            .build();
+            // Google Cloud Monitoring dashboard do not correctly display the overflow buckets in histogram charts when
+            // the Linear Buckets specification is used with a distribution time series!
+            // Also, the offset for linear buckets is not used as a "start" value for the range, but rather as an offset
+            // that is *subtracted* from all the point values and ranges in the histogram. This is surprising and
+            // unexpected behavior.
+            // Therefore, we expand linear buckets into explicit buckets for the time series so that the data can
+            // be displayed correctly on Google Cloud dashboards.
+            case LinearBuckets linearBuckets -> from(linearBuckets.toExplicitBuckets());
             case ExponentialBuckets(int numFiniteBuckets, double growthFactor, double scale) ->
                     Distribution.BucketOptions.newBuilder()
                             .setExponentialBuckets(Distribution.BucketOptions.Exponential.newBuilder()

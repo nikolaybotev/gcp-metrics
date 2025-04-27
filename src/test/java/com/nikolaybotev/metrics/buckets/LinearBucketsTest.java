@@ -2,9 +2,57 @@ package com.nikolaybotev.metrics.buckets;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LinearBucketsTest {
+    @Test
+    public void toExplicitBuckets_withSimpleInput_producesCorrectResult() {
+        var subject = new LinearBuckets(0, 10, 3);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {0, 10, 20, 30}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withNonZeroOffset_producesCorrectResult() {
+        var subject = new LinearBuckets(20, 12, 4);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {20, 32, 44, 56, 68}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withOneFiniteBucket_producesCorrectResult() {
+        var subject = new LinearBuckets(100, 200, 1);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {100, 300}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withOneFiniteBucketSize1_producesCorrectResult() {
+        var subject = new LinearBuckets(1, 1, 1);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {1, 2}, result.bounds());
+    }
+
+    @Test
+    public void bucketForValue_with1FiniteSmallestBucket_isCorrect() {
+        var subject = new LinearBuckets(1, 1, 1);
+
+        assertEquals(0, subject.bucketForValue(-1));
+        assertEquals(0, subject.bucketForValue(0));
+        assertEquals(1, subject.bucketForValue(1));
+        assertEquals(2, subject.bucketForValue(2));
+        assertEquals(2, subject.bucketForValue(300));
+    }
+
     @Test
     public void bucketForValue_lessThanPositiveMin_isZero() {
         var subject = new LinearBuckets(250, 250, 200);
