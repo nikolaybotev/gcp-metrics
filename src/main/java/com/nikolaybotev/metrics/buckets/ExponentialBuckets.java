@@ -1,5 +1,7 @@
 package com.nikolaybotev.metrics.buckets;
 
+import java.io.Serial;
+
 /**
  * Exponential bucket distribution.
  * <p>
@@ -28,6 +30,9 @@ package com.nikolaybotev.metrics.buckets;
  * @param scale linear scale
  */
 public record ExponentialBuckets(int numFiniteBuckets, double growthFactor, double scale) implements Buckets {
+    @Serial
+    private static final long serialVersionUID = -8311969994298531817L;
+
     @Override
     public int bucketForValue(long value) {
         if (value < scale) {

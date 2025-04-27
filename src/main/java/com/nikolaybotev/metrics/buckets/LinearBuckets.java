@@ -33,7 +33,7 @@ import java.io.Serial;
  * @param offset start of first finite bucket (this value is subtracted from values displayed in Google Cloud
  *              Monitoring charts)
  */
-public record LinearBuckets(long offset, long width, int numFiniteBuckets) implements Buckets {
+public record LinearBuckets(double offset, double width, int numFiniteBuckets) implements Buckets {
     @Serial
     private static final long serialVersionUID = -4022957706568722400L;
 
