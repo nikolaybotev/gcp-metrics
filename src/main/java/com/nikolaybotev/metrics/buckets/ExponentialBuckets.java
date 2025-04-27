@@ -1,6 +1,7 @@
 package com.nikolaybotev.metrics.buckets;
 
 import java.io.Serial;
+import java.util.Arrays;
 
 /**
  * Exponential bucket distribution.
@@ -44,6 +45,13 @@ public record ExponentialBuckets(int numFiniteBuckets, double growthFactor, doub
     @Override
     public int numFiniteBuckets() {
         return numFiniteBuckets;
+    }
+
+    @Override
+    public ExplicitBuckets toExplicitBuckets() {
+        var bounds = new double[numFiniteBuckets + 1];
+        Arrays.setAll(bounds, i -> scale * Math.pow(growthFactor, i));
+        return new ExplicitBuckets(bounds);
     }
 
     private static double log(double base, double n) {

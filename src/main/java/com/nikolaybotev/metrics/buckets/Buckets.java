@@ -7,6 +7,8 @@ public sealed interface Buckets extends Serializable permits ExplicitBuckets, Ex
 
     int numFiniteBuckets();
 
+    ExplicitBuckets toExplicitBuckets();
+
     /**
      * @return the total number of buckets including finite and overflow buckets
      */

@@ -2,6 +2,7 @@ package com.nikolaybotev.metrics.buckets;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -23,6 +24,42 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *     Configure distribution metrics - Histogram buckets</a> for more examples.
  */
 public class ExponentialBucketsTest {
+    @Test
+    public void toExplicitBuckets_withSimpleInput_producesCorrectResult() {
+        var subject = new ExponentialBuckets(4, 2, 3);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {3, 6, 12, 24, 48}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withNoScale_producesCorrectResult() {
+        var subject = new ExponentialBuckets(3, 10, 1);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {1, 10, 100, 1_000}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withOneFiniteBucket_producesCorrectResult() {
+        var subject = new ExponentialBuckets(1, 200, 1);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {1, 200}, result.bounds());
+    }
+
+    @Test
+    public void toExplicitBuckets_withOneFiniteBucketSize1_producesCorrectResult() {
+        var subject = new ExponentialBuckets(1, 2, 1);
+
+        var result = subject.toExplicitBuckets();
+
+        assertArrayEquals(new double[] {1, 2}, result.bounds());
+    }
+
     @Test
     public void bucketForValue_lessThanPositiveMin_isZero() {
         var subject = new ExponentialBuckets(4, 2, 3);

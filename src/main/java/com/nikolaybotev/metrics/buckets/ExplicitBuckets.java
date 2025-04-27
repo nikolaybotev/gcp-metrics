@@ -19,4 +19,9 @@ public record ExplicitBuckets(double ... bounds) implements Buckets {
     public int numFiniteBuckets() {
         return bounds.length - 1;
     }
+
+    @Override
+    public ExplicitBuckets toExplicitBuckets() {
+        return this;
+    }
 }

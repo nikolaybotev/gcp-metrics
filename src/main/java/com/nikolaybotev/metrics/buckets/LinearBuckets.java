@@ -43,6 +43,7 @@ public record LinearBuckets(double offset, double width, int numFiniteBuckets) i
         return (int) Math.min(Math.max(0, (value - offset + width) / width), numFiniteBuckets + 1);
     }
 
+    @Override
     public ExplicitBuckets toExplicitBuckets() {
         var bounds = new double[numFiniteBuckets + 1];
         Arrays.setAll(bounds, i -> offset + width * i);
