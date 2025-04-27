@@ -4,7 +4,7 @@ import com.google.api.MonitoredResource;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
-import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
+import com.nikolaybotev.metrics.gcloud.GCloudMetrics;
 import com.nikolaybotev.metrics.jmx.JmxMetrics;
 
 import java.io.*;

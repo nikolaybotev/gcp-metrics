@@ -5,7 +5,7 @@ import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.buckets.ExplicitBuckets;
 import com.nikolaybotev.metrics.buckets.ExponentialBuckets;
-import com.nikolaybotev.metrics.cloudmonitoring.GCloudMetrics;
+import com.nikolaybotev.metrics.gcloud.GCloudMetrics;
 
 import java.util.HashMap;
 import java.util.Map;
