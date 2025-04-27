@@ -2,7 +2,7 @@ package com.nikolaybotev.metrics.cloudmonitoring;
 
 import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.cloudmonitoring.counter.CounterAggregatorWriter;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
 import java.io.Serial;
 

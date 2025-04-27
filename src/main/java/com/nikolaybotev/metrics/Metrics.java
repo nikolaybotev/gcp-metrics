@@ -2,7 +2,7 @@ package com.nikolaybotev.metrics;
 
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
-import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
+import com.nikolaybotev.metrics.util.SerializableRunnable;
 
 import java.io.Serializable;
 

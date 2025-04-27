@@ -3,7 +3,7 @@ package com.nikolaybotev.metrics.cloudmonitoring;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.DistributionAggregatorWriter;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
 import java.io.Serial;
 

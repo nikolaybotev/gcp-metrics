@@ -1,4 +1,4 @@
-package com.nikolaybotev.metrics.cloudmonitoring.util;
+package com.nikolaybotev.metrics.util;
 
 import java.io.Serializable;
 

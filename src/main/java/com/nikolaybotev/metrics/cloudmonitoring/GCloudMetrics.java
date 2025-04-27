@@ -18,11 +18,11 @@ import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudBucketOptions
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.GCloudDistributionAggregator;
 import com.nikolaybotev.metrics.cloudmonitoring.distribution.aggregator.impl.DistributionAggregatorParted;
 import com.nikolaybotev.metrics.cloudmonitoring.emitter.GCloudMetricsEmitter;
-import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazy;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableLazySync;
-import com.nikolaybotev.metrics.cloudmonitoring.util.lazy.SerializableSupplier;
-import com.nikolaybotev.metrics.cloudmonitoring.util.retry.RetryOnExceptions;
+import com.nikolaybotev.metrics.util.SerializableRunnable;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazySync;
+import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
+import com.nikolaybotev.metrics.util.retry.RetryOnExceptions;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;

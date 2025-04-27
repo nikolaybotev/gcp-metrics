@@ -1,4 +1,4 @@
-package com.nikolaybotev.metrics.cloudmonitoring.util.retry;
+package com.nikolaybotev.metrics.util.retry;
 
 public class RetryException extends RuntimeException {
     public RetryException(String message, Throwable cause) {

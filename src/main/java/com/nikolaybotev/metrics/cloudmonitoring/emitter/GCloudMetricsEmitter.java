@@ -10,8 +10,8 @@ import com.google.protobuf.util.Timestamps;
 import com.nikolaybotev.metrics.CounterWithLabel;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
-import com.nikolaybotev.metrics.cloudmonitoring.util.SerializableRunnable;
-import com.nikolaybotev.metrics.cloudmonitoring.util.retry.RetryOnExceptions;
+import com.nikolaybotev.metrics.util.SerializableRunnable;
+import com.nikolaybotev.metrics.util.retry.RetryOnExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

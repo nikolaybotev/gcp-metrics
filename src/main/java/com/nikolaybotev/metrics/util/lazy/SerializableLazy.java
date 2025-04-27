@@ -1,4 +1,4 @@
-package com.nikolaybotev.metrics.cloudmonitoring.util.lazy;
+package com.nikolaybotev.metrics.util.lazy;
 
 import java.io.Serializable;
 import java.util.function.Consumer;
