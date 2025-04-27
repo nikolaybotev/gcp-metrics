@@ -2,6 +2,7 @@ package com.nikolaybotev.metrics.gcloud.counter;
 
 import com.google.monitoring.v3.TimeSeries;
 import com.google.monitoring.v3.TypedValue;
+import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregatorReader;
 import com.nikolaybotev.metrics.gcloud.emitter.GCloudMetricAggregator;
 
 public class GCloudCounterAggregator implements GCloudMetricAggregator {

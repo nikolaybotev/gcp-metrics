@@ -1,7 +1,7 @@
 package com.nikolaybotev.metrics.gcloud;
 
 import com.nikolaybotev.metrics.Gauge;
-import com.nikolaybotev.metrics.gcloud.counter.CounterAggregatorWriter;
+import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregatorWriter;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
 import java.io.Serial;

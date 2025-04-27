@@ -1,5 +1,7 @@
 package com.nikolaybotev.metrics.gcloud.counter;
 
+import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregatorWriter;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;

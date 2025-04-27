@@ -1,6 +1,6 @@
-package com.nikolaybotev.metrics.gcloud.counter.impl;
+package com.nikolaybotev.metrics.gcloud.counter.aggregator.impl;
 
-import com.nikolaybotev.metrics.gcloud.counter.CounterAggregator;
+import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregator;
 
 public class GaugeAggregator implements CounterAggregator {
     private volatile long value;
