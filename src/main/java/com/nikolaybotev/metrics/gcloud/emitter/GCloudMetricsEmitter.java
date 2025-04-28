@@ -13,7 +13,6 @@ import com.google.protobuf.util.Timestamps;
 import com.nikolaybotev.metrics.Counter;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
-import com.nikolaybotev.metrics.util.SerializableRunnable;
 import com.nikolaybotev.metrics.util.retry.RetryOnExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     private final CreateTimeSeriesRequest requestTemplate;
     private final Duration emitInterval;
     private final RetryOnExceptions retryOnExceptions;
-    private final List<SerializableRunnable> emitListeners;
+    private final List<Runnable> emitListeners;
 
     private final Counter emitAttempts;
     private final Distribution emitLatencyMs;
@@ -48,7 +47,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
                                 CreateTimeSeriesRequest requestTemplate,
                                 Duration emitInterval,
                                 RetryOnExceptions retryOnExceptions,
-                                Collection<SerializableRunnable> emitListeners,
+                                Collection<Runnable> emitListeners,
                                 Metrics metrics) {
         this.client = client;
         this.requestTemplate = requestTemplate;

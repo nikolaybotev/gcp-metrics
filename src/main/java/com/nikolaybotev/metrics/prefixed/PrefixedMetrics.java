@@ -5,7 +5,7 @@ import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.buckets.Buckets;
-import com.nikolaybotev.metrics.util.SerializableRunnable;
+import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
 public class PrefixedMetrics implements Metrics {
     private final Metrics metrics;
@@ -32,7 +32,7 @@ public class PrefixedMetrics implements Metrics {
     }
 
     @Override
-    public void addEmitListener(SerializableRunnable listener) {
+    public void addEmitListener(SerializableSupplier<Runnable> listener) {
         metrics.addEmitListener(listener);
     }
 

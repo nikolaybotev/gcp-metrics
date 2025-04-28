@@ -21,7 +21,6 @@ import com.nikolaybotev.metrics.gcloud.distribution.GCloudDistributionAggregator
 import com.nikolaybotev.metrics.gcloud.distribution.aggregator.impl.DistributionAggregatorParted;
 import com.nikolaybotev.metrics.gcloud.emitter.GCloudMetricsEmitter;
 import com.nikolaybotev.metrics.gcloud.labels.LabelAggregatorWriterRegistry;
-import com.nikolaybotev.metrics.util.SerializableRunnable;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazySync;
 import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
@@ -69,7 +68,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private final Duration emitInterval;
     private final RetryOnExceptions emitRetryPolicy;
 
-    private final List<SerializableRunnable> emitListeners;
+    private final List<SerializableSupplier<Runnable>> emitListeners;
     private final SerializableLazy<GCloudMetricsEmitter> emitter;
 
     private transient ConcurrentHashMap<String, GCloudCounter> counters;
@@ -105,14 +104,15 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private GCloudMetricsEmitter createEmitter() {
         try {
             var client = MetricServiceClient.create(metricServiceSettingsSupplier.getValue());
-            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, emitListeners, this);
+            var actualEmitListeners = emitListeners.stream().map(SerializableSupplier::getValue).toList();
+            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, actualEmitListeners, this);
         } catch (IOException ex) {
             throw new RuntimeException("Error creating client.", ex);
         }
     }
 
     @Override
-    public void addEmitListener(SerializableRunnable listener) {
+    public void addEmitListener(SerializableSupplier<Runnable> listener) {
         emitListeners.add(listener);
     }
 

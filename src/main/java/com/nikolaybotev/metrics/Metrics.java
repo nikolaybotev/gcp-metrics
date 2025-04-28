@@ -2,7 +2,7 @@ package com.nikolaybotev.metrics;
 
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
-import com.nikolaybotev.metrics.util.SerializableRunnable;
+import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
 import java.io.Serializable;
 
@@ -29,7 +29,7 @@ public interface Metrics extends Serializable {
         return distribution(name, "", new LinearBuckets(0, 100, 100));
     }
 
-    void addEmitListener(SerializableRunnable listener);
+    void addEmitListener(SerializableSupplier<Runnable> listener);
 
     void flush();
 }
