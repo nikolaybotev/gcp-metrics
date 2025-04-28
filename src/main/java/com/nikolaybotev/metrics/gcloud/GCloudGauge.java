@@ -25,7 +25,7 @@ public class GCloudGauge implements Gauge {
     }
 
     @Override
-    public void emit(long observation) {
+    public void emit(long observation, String... labelValue) {
         aggregator.getValue().add(observation);
     }
 

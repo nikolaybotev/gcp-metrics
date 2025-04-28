@@ -1,7 +1,7 @@
 package com.nikolaybotev.metrics.gcloud;
 
 import com.google.common.collect.ImmutableList;
-import com.nikolaybotev.metrics.GaugeWithLabel;
+import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.gcloud.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
@@ -9,7 +9,7 @@ import java.io.Serial;
 
 import static java.util.Objects.requireNonNull;
 
-public class GCloudGaugeWithLabel implements GaugeWithLabel {
+public class GCloudGaugeWithLabel implements Gauge {
     @Serial
     private static final long serialVersionUID = -788325344231105755L;
 
@@ -30,8 +30,8 @@ public class GCloudGaugeWithLabel implements GaugeWithLabel {
     }
 
     @Override
-    public void emit(long observation, String ... labelValue) {
-        aggregators.getValue().getAggregatorForLabelValue(ImmutableList.copyOf(labelValue)).add(observation);
+    public void emit(long observation, String... labelValue) {
+        aggregators.getValue().getAggregatorForLabelValue(labelValue).add(observation);
     }
 
     @Serial

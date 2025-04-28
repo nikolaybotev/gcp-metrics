@@ -10,7 +10,7 @@ import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.monitoring.v3.*;
 import com.google.protobuf.util.Timestamps;
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
-import com.nikolaybotev.metrics.gcloud.distribution.aggregator.impl.DistributionAggregatorSync;
+import com.nikolaybotev.metrics.gcloud.distribution.aggregator.impl.DistributionAggregatorParted;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public class CloudMonitoringMetricsV3Test {
                 .setEndTime(Timestamps.fromMillis(System.currentTimeMillis()))
                 .build();
 
-        var aggregator = new DistributionAggregatorSync(new LinearBuckets(0, 100, 100));
+        var aggregator = new DistributionAggregatorParted(new LinearBuckets(0, 100, 100));
         for (var i = 0; i < 128; i++) {
             var value = Math.random() * 10_000;
             aggregator.add((long) value);

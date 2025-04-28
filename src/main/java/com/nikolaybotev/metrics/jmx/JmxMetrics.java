@@ -1,6 +1,6 @@
 package com.nikolaybotev.metrics.jmx;
 
-import com.nikolaybotev.metrics.GaugeWithLabel;
+import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.Metrics;
 
 import java.lang.management.ManagementFactory;
@@ -13,23 +13,23 @@ public final class JmxMetrics {
     }
 
     public static void emitMemoryStatisticsTo(Metrics metrics) {
-        var memInitial = metrics.gaugeWithLabel("jvm_mem_initial", "pool");
-        var memUsed = metrics.gaugeWithLabel("jvm_mem_used", "pool");
-        var memCommitted = metrics.gaugeWithLabel("jvm_mem_committed", "pool");
-        var memMax = metrics.gaugeWithLabel("jvm_mem_max", "pool");
+        var memInitial = metrics.gauge("jvm_mem_initial", "pool");
+        var memUsed = metrics.gauge("jvm_mem_used", "pool");
+        var memCommitted = metrics.gauge("jvm_mem_committed", "pool");
+        var memMax = metrics.gauge("jvm_mem_max", "pool");
         metrics.addEmitListener(() -> emitMemStats(memInitial, memUsed, memCommitted, memMax));
     }
 
     public static void emitGarbageCollectionStatisticsTo(Metrics metrics) {
-        var gcCount = metrics.gaugeWithLabel("jvm_gc_count", "collector");
-        var gcTime = metrics.gaugeWithLabel("jvm_gc_time", "collector");
+        var gcCount = metrics.gauge("jvm_gc_count", "collector");
+        var gcTime = metrics.gauge("jvm_gc_time", "collector");
         metrics.addEmitListener(() -> emitGcStats(gcCount, gcTime));
     }
 
-    private static void emitMemStats(GaugeWithLabel memInitial,
-                                     GaugeWithLabel memUsed,
-                                     GaugeWithLabel memCommitted,
-                                     GaugeWithLabel memMax) {
+    private static void emitMemStats(Gauge memInitial,
+                                     Gauge memUsed,
+                                     Gauge memCommitted,
+                                     Gauge memMax) {
         // Get the MemoryMXBean
         var memoryMXBean = ManagementFactory.getMemoryMXBean();
 
@@ -46,10 +46,10 @@ public final class JmxMetrics {
         }
     }
 
-    private static void emitMemUsage(GaugeWithLabel memInitial,
-                                     GaugeWithLabel memUsed,
-                                     GaugeWithLabel memCommitted,
-                                     GaugeWithLabel memMax,
+    private static void emitMemUsage(Gauge memInitial,
+                                     Gauge memUsed,
+                                     Gauge memCommitted,
+                                     Gauge memMax,
                                      MemoryUsage memUsage,
                                      String poolName) {
         memInitial.emit(poolName, memUsage.getInit());
@@ -58,7 +58,7 @@ public final class JmxMetrics {
         memMax.emit(poolName, memUsage.getMax());
     }
 
-    private static void emitGcStats(GaugeWithLabel gcCount, GaugeWithLabel gcTime) {
+    private static void emitGcStats(Gauge gcCount, Gauge gcTime) {
         // Get the list of GarbageCollectorMXBeans
         var gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (var gcBean : gcBeans) {

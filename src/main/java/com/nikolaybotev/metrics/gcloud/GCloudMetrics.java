@@ -8,11 +8,13 @@ import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.common.collect.ImmutableList;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.TimeSeries;
-import com.nikolaybotev.metrics.*;
+import com.nikolaybotev.metrics.Counter;
+import com.nikolaybotev.metrics.Distribution;
+import com.nikolaybotev.metrics.Gauge;
+import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.gcloud.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.gcloud.counter.GCloudCounterAggregator;
-import com.nikolaybotev.metrics.gcloud.counter.aggregator.impl.CounterAggregatorAtomic;
 import com.nikolaybotev.metrics.gcloud.counter.aggregator.impl.CounterAggregatorParted;
 import com.nikolaybotev.metrics.gcloud.counter.aggregator.impl.GaugeAggregator;
 import com.nikolaybotev.metrics.gcloud.distribution.GCloudBucketOptions;
@@ -130,22 +132,18 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     @Override
-    public Counter counter(String name) {
-        return getCounter(name);
-    }
-
-    @Override
-    public CounterWithLabel counterWithLabel(String name, String ... labelKey) {
+    public Counter counter(String name, String... labelKey) {
+        if (labelKey.length == 0) {
+            return getCounter(name);
+        }
         return getCounterWithLabel(name, ImmutableList.copyOf(labelKey));
     }
 
     @Override
-    public Gauge gauge(String name) {
-        return getGauge(name);
-    }
-
-    @Override
-    public GaugeWithLabel gaugeWithLabel(String name, String ... labelKey) {
+    public Gauge gauge(String name, String... labelKey) {
+        if (labelKey.length == 0) {
+            return getGauge(name);
+        }
         return getGaugeWithLabel(name, ImmutableList.copyOf(labelKey));
     }
 
@@ -172,8 +170,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudCounterWithLabel getCounterWithLabel(String name, ImmutableList<String> labelKey) {
         return countersWithLabel.computeIfAbsent(name, key -> {
-            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelValue -> {
-                var aggregator = new CounterAggregatorAtomic();
+            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelKey.size(), labelValue -> {
+                var aggregator = new CounterAggregatorParted();
                 var metric = createMetricWithLabels(name, labelKey, labelValue);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
                 var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
@@ -204,7 +202,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     GCloudGaugeWithLabel getGaugeWithLabel(String name, ImmutableList<String> labelKey) {
         return gaugesWithLabel.computeIfAbsent(name, key -> {
-            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelValue -> {
+            var lazyAggregators = new SerializableLazySync<>(() -> new CounterWithLabelAggregators(labelKey.size(), labelValue -> {
                 var aggregator = new GaugeAggregator();
                 var metric = createMetricWithLabels(name, labelKey, labelValue);
                 var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();

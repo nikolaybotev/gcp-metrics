@@ -1,7 +1,7 @@
 package com.nikolaybotev.metrics.gcloud;
 
 import com.google.common.collect.ImmutableList;
-import com.nikolaybotev.metrics.CounterWithLabel;
+import com.nikolaybotev.metrics.Counter;
 import com.nikolaybotev.metrics.gcloud.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
@@ -9,7 +9,7 @@ import java.io.Serial;
 
 import static java.util.Objects.requireNonNull;
 
-public class GCloudCounterWithLabel implements CounterWithLabel {
+public class GCloudCounterWithLabel implements Counter {
     @Serial
     private static final long serialVersionUID = -1075349040232098340L;
 
@@ -30,8 +30,8 @@ public class GCloudCounterWithLabel implements CounterWithLabel {
     }
 
     @Override
-    public void inc(long n, String ... labelValue) {
-        aggregators.getValue().getAggregatorForLabelValue(ImmutableList.copyOf(labelValue)).add(n);
+    public void inc(long n, String... labelValue) {
+        aggregators.getValue().getAggregatorForLabelValue(labelValue).add(n);
     }
 
     @Serial

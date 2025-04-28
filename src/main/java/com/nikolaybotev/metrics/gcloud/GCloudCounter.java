@@ -25,7 +25,7 @@ public class GCloudCounter implements Counter {
     }
 
     @Override
-    public void inc(long n) {
+    public void inc(long n, String... labelValue) {
         aggregator.getValue().add(n);
     }
 

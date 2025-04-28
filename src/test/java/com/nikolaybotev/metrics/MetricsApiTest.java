@@ -36,7 +36,7 @@ public class MetricsApiTest {
                 .build();
 
         try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
-            var counter = metrics.counterWithLabel("my_counter2", "status_code", "delayed");
+            var counter = metrics.counter("my_counter2", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 
             // Serialize the objects
@@ -53,17 +53,17 @@ public class MetricsApiTest {
             // Deserialize the objects
             Metrics deserializedMetrics;
             Metrics deserializedMetrics2;
-            CounterWithLabel deserializedCounter;
-            CounterWithLabel deserializedCounter2;
+            Counter deserializedCounter;
+            Counter deserializedCounter2;
             Distribution deserializedDistribution;
             Distribution deserializedDistribution2;
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics = (Metrics) ois.readObject();
                 deserializedDistribution = (Distribution) ois.readObject();
-                deserializedCounter = (CounterWithLabel) ois.readObject();
+                deserializedCounter = (Counter) ois.readObject();
                 deserializedMetrics2 = (Metrics) ois.readObject();
                 deserializedDistribution2 = (Distribution) ois.readObject();
-                deserializedCounter2 = (CounterWithLabel) ois.readObject();
+                deserializedCounter2 = (Counter) ois.readObject();
             }
 
             System.out.println("metrics and deserializedMetrics are the same instance: " + (metrics == deserializedMetrics));
@@ -78,19 +78,19 @@ public class MetricsApiTest {
 
             Metrics deserializedMetrics3;
             Metrics deserializedMetrics4;
-            CounterWithLabel deserializedCounter3;
-            CounterWithLabel deserializedCounter4;
+            Counter deserializedCounter3;
+            Counter deserializedCounter4;
             Distribution deserializedDistribution3;
             Distribution deserializedDistribution4;
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics3 = (Metrics) ois.readObject();
                 deserializedDistribution3 = (Distribution) ois.readObject();
-                deserializedCounter3 = (CounterWithLabel) ois.readObject();
+                deserializedCounter3 = (Counter) ois.readObject();
             }
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics4 = (Metrics) ois.readObject();
                 deserializedDistribution4 = (Distribution) ois.readObject();
-                deserializedCounter4 = (CounterWithLabel) ois.readObject();
+                deserializedCounter4 = (Counter) ois.readObject();
             }
 
             // Check if the deserialized instance is the same as the original

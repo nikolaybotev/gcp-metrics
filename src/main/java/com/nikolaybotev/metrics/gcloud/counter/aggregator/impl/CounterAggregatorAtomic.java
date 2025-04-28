@@ -4,7 +4,7 @@ import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregator;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class CounterAggregatorAtomic implements CounterAggregator {
+class CounterAggregatorAtomic implements CounterAggregator {
     private final AtomicLong counter = new AtomicLong();
 
     @Override

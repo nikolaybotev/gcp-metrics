@@ -7,7 +7,7 @@ import com.nikolaybotev.metrics.gcloud.distribution.aggregator.DistributionAggre
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class DistributionAggregatorSync implements DistributionAggregator {
+class DistributionAggregatorSync implements DistributionAggregator {
     private final Buckets bucketsDefinition;
 
     private final long[] buckets;

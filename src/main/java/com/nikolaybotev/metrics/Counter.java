@@ -4,9 +4,13 @@ package com.nikolaybotev.metrics;
 import java.io.Serializable;
 
 public interface Counter extends Serializable {
-    default void inc() {
-        inc(1);
+    default void inc(String... labelValue) {
+        inc(1, labelValue);
     }
 
-    void inc(long n);
+    default void inc(String labelValue, long n) {
+        inc(n, labelValue);
+    }
+
+    void inc(long n, String... labelValue);
 }
