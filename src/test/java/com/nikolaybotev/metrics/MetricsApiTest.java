@@ -6,6 +6,7 @@ import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.gcloud.GCloudMetrics;
 import com.nikolaybotev.metrics.jmx.JmxMetrics;
+import com.nikolaybotev.metrics.prefixed.PrefixedMetrics;
 
 import java.io.*;
 import java.lang.management.*;
@@ -144,7 +145,8 @@ public class MetricsApiTest {
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 10, 200);
-            var sampleSum = deserializedMetrics4.counter("thousand_point_submit_gauge");
+            var prefixedMetrics = new PrefixedMetrics(deserializedMetrics4, "Prefix_");
+            var sampleSum = prefixedMetrics.counter("thousand_point_submit_gauge", "status");
             var sampleGauge = deserializedMetrics4.gauge("gauge_thousand_oaks");
             var threads = 100;
             var samplesPerThread = 100_000;
