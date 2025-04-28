@@ -1,5 +1,6 @@
 package com.nikolaybotev.metrics.gcloud;
 
+import com.google.common.collect.ImmutableList;
 import com.nikolaybotev.metrics.CounterWithLabel;
 import com.nikolaybotev.metrics.gcloud.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
@@ -16,11 +17,11 @@ public class GCloudCounterWithLabel implements CounterWithLabel {
 
     private final String name;
 
-    private final String labelKey;
+    private final ImmutableList<String> labelKey;
 
     private final SerializableLazy<CounterWithLabelAggregators> aggregators;
 
-    public GCloudCounterWithLabel(GCloudMetrics metrics, String name, String labelKey,
+    public GCloudCounterWithLabel(GCloudMetrics metrics, String name, ImmutableList<String> labelKey,
                                   SerializableLazy<CounterWithLabelAggregators> aggregators) {
         this.metrics = metrics;
         this.name = name;
@@ -29,8 +30,8 @@ public class GCloudCounterWithLabel implements CounterWithLabel {
     }
 
     @Override
-    public void inc(String labelValue, long n) {
-        aggregators.getValue().getAggregatorForLabelValue(labelValue).add(n);
+    public void inc(long n, String ... labelValue) {
+        aggregators.getValue().getAggregatorForLabelValue(ImmutableList.copyOf(labelValue)).add(n);
     }
 
     @Serial

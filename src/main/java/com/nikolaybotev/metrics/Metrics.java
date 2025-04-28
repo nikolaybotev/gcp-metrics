@@ -8,10 +8,10 @@ import java.io.Serializable;
 
 public interface Metrics extends Serializable {
     Counter counter(String name);
-    CounterWithLabel counterWithLabel(String name, String label);
+    CounterWithLabel counterWithLabel(String name, String ... label);
 
     Gauge gauge(String name);
-    GaugeWithLabel gaugeWithLabel(String name, String label);
+    GaugeWithLabel gaugeWithLabel(String name, String ... label);
 
     Distribution distribution(String name, String unit, Buckets buckets);
 

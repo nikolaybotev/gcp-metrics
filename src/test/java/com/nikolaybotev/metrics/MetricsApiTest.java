@@ -36,7 +36,7 @@ public class MetricsApiTest {
                 .build();
 
         try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
-            var counter = metrics.counterWithLabel("my_counter2", "status_code");
+            var counter = metrics.counterWithLabel("my_counter2", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 
             // Serialize the objects
@@ -116,6 +116,8 @@ public class MetricsApiTest {
             counter.inc("403", 1320);
             counter.inc("500", 1105);
             counter.inc("500");
+            counter.inc(100, "200", "yes");
+            counter.inc(250, "200", "no");
 
             var basicCounter = metrics.counter("basic_counter");
             for (var i = 0; i < 50; i++) {

@@ -1,5 +1,6 @@
 package com.nikolaybotev.metrics.gcloud;
 
+import com.google.common.collect.ImmutableList;
 import com.nikolaybotev.metrics.GaugeWithLabel;
 import com.nikolaybotev.metrics.gcloud.counter.CounterWithLabelAggregators;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
@@ -16,11 +17,11 @@ public class GCloudGaugeWithLabel implements GaugeWithLabel {
 
     private final String name;
 
-    private final String labelKey;
+    private final ImmutableList<String> labelKey;
 
     private final SerializableLazy<CounterWithLabelAggregators> aggregators;
 
-    public GCloudGaugeWithLabel(GCloudMetrics metrics, String name, String labelKey,
+    public GCloudGaugeWithLabel(GCloudMetrics metrics, String name, ImmutableList<String> labelKey,
                                 SerializableLazy<CounterWithLabelAggregators> aggregators) {
         this.metrics = metrics;
         this.name = name;
@@ -29,8 +30,8 @@ public class GCloudGaugeWithLabel implements GaugeWithLabel {
     }
 
     @Override
-    public void emit(String labelValue, long observation) {
-        aggregators.getValue().getAggregatorForLabelValue(labelValue).add(observation);
+    public void emit(long observation, String ... labelValue) {
+        aggregators.getValue().getAggregatorForLabelValue(ImmutableList.copyOf(labelValue)).add(observation);
     }
 
     @Serial
