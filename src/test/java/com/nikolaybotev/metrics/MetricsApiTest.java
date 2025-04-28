@@ -118,6 +118,7 @@ public class MetricsApiTest {
             counter.inc("500");
             counter.inc(100, "200", "yes");
             counter.inc(250, "200", "no");
+            counter.inc(8800); // no labels!
 
             var basicCounter = metrics.counter("basic_counter");
             for (var i = 0; i < 50; i++) {

@@ -14,13 +14,9 @@ public class GCloudDistribution implements Distribution {
     private static final long serialVersionUID = -4376922731386890802L;
 
     private final GCloudMetrics metrics;
-
     private final String name;
-
     private final String unit;
-
     private final Buckets buckets;
-
     private final SerializableLazy<? extends DistributionAggregatorWriter> aggregator;
 
     public GCloudDistribution(GCloudMetrics metrics, String name, String unit, Buckets buckets, SerializableLazy<? extends DistributionAggregatorWriter> aggregator) {

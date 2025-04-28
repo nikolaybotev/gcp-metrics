@@ -1,7 +1,9 @@
 package com.nikolaybotev.metrics.gcloud;
 
+import com.google.common.collect.ImmutableList;
 import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregatorWriter;
+import com.nikolaybotev.metrics.gcloud.labels.LabelAggregatorWriterRegistry;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
 import java.io.Serial;
@@ -10,27 +12,28 @@ import static java.util.Objects.requireNonNull;
 
 public class GCloudGauge implements Gauge {
     @Serial
-    private static final long serialVersionUID = -720626437577574146L;
+    private static final long serialVersionUID = -788325344231105755L;
 
     private final GCloudMetrics metrics;
-
     private final String name;
+    private final ImmutableList<String> labelKey;
+    private final SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators;
 
-    private final SerializableLazy<? extends CounterAggregatorWriter> aggregator;
-
-    public GCloudGauge(GCloudMetrics metrics, String name, SerializableLazy<? extends CounterAggregatorWriter> aggregator) {
+    public GCloudGauge(GCloudMetrics metrics, String name, ImmutableList<String> labelKey,
+                       SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators) {
         this.metrics = metrics;
         this.name = name;
-        this.aggregator = aggregator;
+        this.labelKey = labelKey;
+        this.aggregators = aggregators;
     }
 
     @Override
     public void emit(long observation, String... labelValue) {
-        aggregator.getValue().add(observation);
+        aggregators.getValue().getAggregatorForLabelValue(labelValue).add(observation);
     }
 
     @Serial
     private Object readResolve() {
-        return requireNonNull(metrics).getGauge(name);
+        return requireNonNull(metrics).getGauge(name, labelKey);
     }
 }
