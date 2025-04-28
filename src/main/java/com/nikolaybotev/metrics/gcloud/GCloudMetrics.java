@@ -3,7 +3,6 @@ package com.nikolaybotev.metrics.gcloud;
 import com.google.api.Metric;
 import com.google.api.MetricDescriptor;
 import com.google.api.MonitoredResource;
-import com.google.cloud.monitoring.v3.MetricServiceClient;
 import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.common.collect.ImmutableList;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
@@ -102,13 +101,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     private GCloudMetricsEmitter createEmitter() {
-        try {
-            var client = MetricServiceClient.create(metricServiceSettingsSupplier.getValue());
-            var actualEmitListeners = emitListeners.stream().map(SerializableSupplier::getValue).toList();
-            return new GCloudMetricsEmitter(client, requestTemplate, emitInterval, emitRetryPolicy, actualEmitListeners, this);
-        } catch (IOException ex) {
-            throw new RuntimeException("Error creating client.", ex);
-        }
+        var actualEmitListeners = emitListeners.stream().map(SerializableSupplier::getValue).toList();
+        return new GCloudMetricsEmitter(metricServiceSettingsSupplier, requestTemplate, emitInterval, emitRetryPolicy, actualEmitListeners, this);
     }
 
     @Override

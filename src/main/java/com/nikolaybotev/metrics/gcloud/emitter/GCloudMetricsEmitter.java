@@ -5,6 +5,7 @@ import com.google.api.gax.rpc.DataLossException;
 import com.google.api.gax.rpc.InternalException;
 import com.google.api.gax.rpc.UnavailableException;
 import com.google.cloud.monitoring.v3.MetricServiceClient;
+import com.google.cloud.monitoring.v3.MetricServiceSettings;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.Point;
@@ -13,10 +14,14 @@ import com.google.protobuf.util.Timestamps;
 import com.nikolaybotev.metrics.Counter;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.Metrics;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
+import com.nikolaybotev.metrics.util.lazy.SerializableLazySync;
+import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 import com.nikolaybotev.metrics.util.retry.RetryOnExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -30,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class GCloudMetricsEmitter implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(GCloudMetricsEmitter.class);
 
-    private final MetricServiceClient client;
+    private final SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier;
     private final CreateTimeSeriesRequest requestTemplate;
     private final Duration emitInterval;
     private final RetryOnExceptions retryOnExceptions;
@@ -39,17 +44,19 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     private final Counter emitAttempts;
     private final Distribution emitLatencyMs;
 
+    private final SerializableLazy<MetricServiceClient> client;
+
     private final List<GCloudMetricAggregator> aggregators = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService emitTimer;
     private final ScheduledExecutorService emitListenerTimer;
 
-    public GCloudMetricsEmitter(MetricServiceClient client,
+    public GCloudMetricsEmitter(SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier,
                                 CreateTimeSeriesRequest requestTemplate,
                                 Duration emitInterval,
                                 RetryOnExceptions retryOnExceptions,
                                 Collection<Runnable> emitListeners,
                                 Metrics metrics) {
-        this.client = client;
+        this.metricServiceSettingsSupplier = metricServiceSettingsSupplier;
         this.requestTemplate = requestTemplate;
         this.emitInterval = emitInterval;
         this.retryOnExceptions = retryOnExceptions;
@@ -57,6 +64,15 @@ public class GCloudMetricsEmitter implements AutoCloseable {
 
         this.emitAttempts = metrics.counter("gcp_metrics/emit_attempts", "status");
         this.emitLatencyMs = metrics.distribution("gcp_metrics/emit_latency_millis", "ms", 20, 50);
+
+        this.client = new SerializableLazySync<>(() -> {
+            try {
+                return MetricServiceClient.create(this.metricServiceSettingsSupplier.getValue());
+            } catch (IOException ex) {
+                logger.warn("Failed to create client.", ex);
+                throw new RuntimeException("Failed to create client.", ex);
+            }
+        });
 
         this.emitTimer = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
@@ -108,7 +124,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
     }
 
     public void close() {
-        client.close();
+        client.apply(MetricServiceClient::close);
         emitTimer.shutdownNow();
         logger.info("Closed metrics emitter.");
     }
@@ -136,7 +152,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
         }
 
         var elapsedMillis = retryOnExceptions.run(
-                () -> client.createTimeSeries(request.build()),
+                () -> client.getValue().createTimeSeries(request.build()),
                 Set.of(InternalException.class,
                         UnavailableException.class,
                         AbortedException.class,
