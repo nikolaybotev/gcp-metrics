@@ -1,6 +1,5 @@
 package com.nikolaybotev.metrics;
 
-
 import java.io.Serializable;
 
 public interface Counter extends Serializable {

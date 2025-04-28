@@ -1,6 +1,9 @@
 package com.nikolaybotev.metrics.gcloud.emitter;
 
-import com.google.api.gax.rpc.*;
+import com.google.api.gax.rpc.AbortedException;
+import com.google.api.gax.rpc.DataLossException;
+import com.google.api.gax.rpc.InternalException;
+import com.google.api.gax.rpc.UnavailableException;
 import com.google.cloud.monitoring.v3.MetricServiceClient;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.monitoring.v3.CreateTimeSeriesRequest;
