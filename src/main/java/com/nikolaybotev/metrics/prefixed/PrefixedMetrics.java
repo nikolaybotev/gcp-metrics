@@ -17,13 +17,13 @@ public class PrefixedMetrics implements Metrics {
     }
 
     @Override
-    public Counter counter(String name, String... label) {
-        return metrics.counter(prefix + name, label);
+    public Counter counter(String name, String unit, String... label) {
+        return metrics.counter(prefix + name, unit, label);
     }
 
     @Override
-    public Gauge gauge(String name, String... label) {
-        return metrics.gauge(prefix + name, label);
+    public Gauge gauge(String name, String unit, String... label) {
+        return metrics.gauge(prefix + name, unit, label);
     }
 
     @Override

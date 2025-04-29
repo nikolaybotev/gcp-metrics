@@ -124,13 +124,13 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     @Override
-    public Counter counter(String name, String... labelKey) {
-        return getCounter(name, ImmutableList.copyOf(labelKey));
+    public Counter counter(String name, String unit, String... labelKey) {
+        return getCounter(name, unit, ImmutableList.copyOf(labelKey));
     }
 
     @Override
-    public Gauge gauge(String name, String... labelKey) {
-        return getGauge(name, ImmutableList.copyOf(labelKey));
+    public Gauge gauge(String name, String unit, String... labelKey) {
+        return getGauge(name, unit, ImmutableList.copyOf(labelKey));
     }
 
     @Override
@@ -138,39 +138,39 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         return getDistribution(name, unit, buckets);
     }
 
-    GCloudCounter getCounter(String name, ImmutableList<String> labelKey) {
+    GCloudCounter getCounter(String name, String unit, ImmutableList<String> labelKey) {
         return counters.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(
                     () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
                         var aggregator = new CounterAggregatorParted();
 
                         var metric = createMetricWithLabels(name, labelKey, labelValue);
-                        var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
+                        var timeSeriesTemplate = createTimeSeriesTemplate(metric, unit, MetricDescriptor.ValueType.INT64);
                         var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
                         emitter.getValue().addAggregator(gcloudAggregator);
 
                         return aggregator;
                     }));
 
-            return new GCloudCounter(this, name, labelKey, lazyAggregators);
+            return new GCloudCounter(this, name, unit, labelKey, lazyAggregators);
         });
     }
 
-    GCloudGauge getGauge(String name, ImmutableList<String> labelKey) {
+    GCloudGauge getGauge(String name, String unit, ImmutableList<String> labelKey) {
         return gauges.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(
                     () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
                         var aggregator = new GaugeAggregator();
 
                         var metric = createMetricWithLabels(name, labelKey, labelValue);
-                        var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.INT64).build();
+                        var timeSeriesTemplate = createTimeSeriesTemplate(metric, unit, MetricDescriptor.ValueType.INT64);
                         var gcloudAggregator = new GCloudCounterAggregator(timeSeriesTemplate, aggregator);
                         emitter.getValue().addAggregator(gcloudAggregator);
 
                         return aggregator;
                     }));
 
-            return new GCloudGauge(this, name, labelKey, lazyAggregators);
+            return new GCloudGauge(this, name, unit, labelKey, lazyAggregators);
         });
     }
 
@@ -179,9 +179,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
             var lazyAggregator = new SerializableLazySync<>(() -> {
                 var aggregator = new DistributionAggregatorParted(buckets);
                 var metric = createMetric(name);
-                var timeSeriesTemplate = createTimeSeriesTemplate(metric, MetricDescriptor.ValueType.DISTRIBUTION)
-                        .setUnit(unit)
-                        .build();
+                var timeSeriesTemplate = createTimeSeriesTemplate(metric, unit, MetricDescriptor.ValueType.DISTRIBUTION);
                 var bucketOptions = GCloudBucketOptions.from(buckets);
                 var gcloudAggregator = new GCloudDistributionAggregator(timeSeriesTemplate, bucketOptions, aggregator);
 
@@ -193,12 +191,14 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         });
     }
 
-    private TimeSeries.Builder createTimeSeriesTemplate(Metric.Builder metric, MetricDescriptor.ValueType valueType) {
+    private TimeSeries createTimeSeriesTemplate(Metric.Builder metric, String unit, MetricDescriptor.ValueType valueType) {
         return TimeSeries.newBuilder()
                 .setMetric(metric)
                 .setResource(resource)
                 .setMetricKind(MetricDescriptor.MetricKind.GAUGE)
-                .setValueType(valueType);
+                .setUnit(unit)
+                .setValueType(valueType)
+                .build();
     }
 
     private Metric.Builder createMetric(String name) {

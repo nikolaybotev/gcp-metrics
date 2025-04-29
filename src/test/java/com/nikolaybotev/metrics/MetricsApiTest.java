@@ -37,7 +37,7 @@ public class MetricsApiTest {
                 .build();
 
         try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
-            var counter = metrics.counter("my_counter2", "status_code", "delayed");
+            var counter = metrics.counter("my_counter2", "", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 
             // Serialize the objects
@@ -146,7 +146,7 @@ public class MetricsApiTest {
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 10, 200);
             var prefixedMetrics = new PrefixedMetrics(deserializedMetrics4, "Prefix_");
-            var sampleSum = prefixedMetrics.counter("thousand_point_submit_gauge", "status");
+            var sampleSum = prefixedMetrics.counter("thousand_point_submit_gauge", "", "status");
             var sampleGauge = deserializedMetrics4.gauge("gauge_thousand_oaks");
             var threads = 100;
             var samplesPerThread = 100_000;

@@ -9,12 +9,12 @@ import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
 public class NoopMetrics implements Metrics {
     @Override
-    public Counter counter(String name, String... label) {
+    public Counter counter(String name, String unit, String... label) {
         return (n, labelValue) -> {};
     }
 
     @Override
-    public Gauge gauge(String name, String... label) {
+    public Gauge gauge(String name, String unit, String... label) {
         return (observation, labelValue) -> {};
     }
 

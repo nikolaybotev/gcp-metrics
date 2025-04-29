@@ -16,13 +16,15 @@ public class GCloudGauge implements Gauge {
 
     private final GCloudMetrics metrics;
     private final String name;
+    private final String unit;
     private final ImmutableList<String> labelKey;
     private final SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators;
 
-    public GCloudGauge(GCloudMetrics metrics, String name, ImmutableList<String> labelKey,
+    public GCloudGauge(GCloudMetrics metrics, String name, String unit, ImmutableList<String> labelKey,
                        SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators) {
         this.metrics = metrics;
         this.name = name;
+        this.unit = unit;
         this.labelKey = labelKey;
         this.aggregators = aggregators;
     }
@@ -34,6 +36,6 @@ public class GCloudGauge implements Gauge {
 
     @Serial
     private Object readResolve() {
-        return requireNonNull(metrics).getGauge(name, labelKey);
+        return requireNonNull(metrics).getGauge(name, unit, labelKey);
     }
 }

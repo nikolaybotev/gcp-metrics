@@ -20,9 +20,9 @@ public class MetricsApiSerializationTest {
 
         public MyFn(Metrics metrics) {
             c1 = metrics.counter("test1");
-            c2 = metrics.counter("test2", "label");
+            c2 = metrics.counter("test2", "", "label");
             g1 = metrics.gauge("test3");
-            g2 = metrics.gauge("test4", "label");
+            g2 = metrics.gauge("test4", "", "label");
             d1 = metrics.distribution("hello");
         }
     }

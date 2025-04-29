@@ -14,10 +14,10 @@ public final class JmxMetrics {
 
     public static void emitMemoryStatisticsTo(Metrics metrics) {
         metrics.addEmitListener(() -> {
-            var memInitial = metrics.gauge("jvm_mem_initial", "pool");
-            var memUsed = metrics.gauge("jvm_mem_used", "pool");
-            var memCommitted = metrics.gauge("jvm_mem_committed", "pool");
-            var memMax = metrics.gauge("jvm_mem_max", "pool");
+            var memInitial = metrics.gauge("jvm_mem_initial", "By", "pool");
+            var memUsed = metrics.gauge("jvm_mem_used", "By", "pool");
+            var memCommitted = metrics.gauge("jvm_mem_committed", "By", "pool");
+            var memMax = metrics.gauge("jvm_mem_max", "By", "pool");
 
             return () -> emitMemStats(memInitial, memUsed, memCommitted, memMax);
         });
@@ -25,8 +25,8 @@ public final class JmxMetrics {
 
     public static void emitGarbageCollectionStatisticsTo(Metrics metrics) {
         metrics.addEmitListener(() -> {
-            var gcCount = metrics.gauge("jvm_gc_count", "collector");
-            var gcTime = metrics.gauge("jvm_gc_time", "collector");
+            var gcCount = metrics.gauge("jvm_gc_count", "", "collector");
+            var gcTime = metrics.gauge("jvm_gc_time", "", "collector");
 
             return () -> emitGcStats(gcCount, gcTime);
         });

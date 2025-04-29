@@ -16,13 +16,15 @@ public class GCloudCounter implements Counter {
 
     private final GCloudMetrics metrics;
     private final String name;
+    private final String unit;
     private final ImmutableList<String> labelKey;
     private final SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators;
 
-    public GCloudCounter(GCloudMetrics metrics, String name, ImmutableList<String> labelKey,
+    public GCloudCounter(GCloudMetrics metrics, String name, String unit, ImmutableList<String> labelKey,
                          SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators) {
         this.metrics = metrics;
         this.name = name;
+        this.unit = unit;
         this.labelKey = labelKey;
         this.aggregators = aggregators;
     }
@@ -34,6 +36,6 @@ public class GCloudCounter implements Counter {
 
     @Serial
     private Object readResolve() {
-        return requireNonNull(metrics).getCounter(name, labelKey);
+        return requireNonNull(metrics).getCounter(name, unit, labelKey);
     }
 }
