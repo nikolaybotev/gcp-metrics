@@ -195,11 +195,20 @@ public class MetricsApiTest {
         System.out.println("  Used: " + heapMemoryUsage.getUsed() + " bytes");
         System.out.println("  Committed: " + heapMemoryUsage.getCommitted() + " bytes");
         System.out.println("  Max: " + heapMemoryUsage.getMax() + " bytes");
+        System.out.println();
 
         // Get memory pools
+        var poolInitial = 0L;
+        var poolUsed = 0L;
+        var poolCommitted = 0L;
+        var poolMax = 0L;
         List<MemoryPoolMXBean> memoryPoolMXBeans = ManagementFactory.getMemoryPoolMXBeans();
         for (MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
             MemoryUsage usage = memoryPoolMXBean.getUsage();
+            poolInitial += usage.getInit();
+            poolUsed += usage.getUsed();
+            poolCommitted += usage.getCommitted();
+            poolMax += usage.getMax();
             var sanitizedName = sanitizeName(memoryPoolMXBean.getName());
             System.out.println("Memory Pool: " + memoryPoolMXBean.getName() + " (" + sanitizedName + ")");
             System.out.println("  Initial: " + usage.getInit() + " bytes");
@@ -208,6 +217,13 @@ public class MetricsApiTest {
             System.out.println("  Max: " + usage.getMax() + " bytes");
             System.out.println();
         }
+
+        System.out.println("Memory Pool Total / Heap");
+        System.out.printf("  Initial: %.2f / %.2f MB%n", poolInitial / 1_048_576d, heapMemoryUsage.getInit() / 1_048_576d);
+        System.out.printf("  Used: %.2f / %.2f MB%n", poolUsed / 1_048_576d, heapMemoryUsage.getUsed() / 1_048_576d);
+        System.out.printf("  Committed: %.2f / %.2f MB%n", poolCommitted / 1_048_576d, heapMemoryUsage.getCommitted() / 1_048_576d);
+        System.out.printf("  Max: %.2f / %.2f MB", poolMax / 1_048_576d, heapMemoryUsage.getMax() / 1_048_576d);
+        System.out.println();
 
         // Get the list of GarbageCollectorMXBeans
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();

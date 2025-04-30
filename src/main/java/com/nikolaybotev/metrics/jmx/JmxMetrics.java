@@ -14,12 +14,17 @@ public final class JmxMetrics {
 
     public static void emitMemoryStatisticsTo(Metrics metrics) {
         metrics.addEmitListener(() -> {
-            var memInitial = metrics.gauge("jvm_mem_initial", "By", "pool");
-            var memUsed = metrics.gauge("jvm_mem_used", "By", "pool");
-            var memCommitted = metrics.gauge("jvm_mem_committed", "By", "pool");
-            var memMax = metrics.gauge("jvm_mem_max", "By", "pool");
+            var heapInitial = metrics.gauge("jvm_memory_heap_initial", "By");
+            var heapUsed = metrics.gauge("jvm_memory_heap_used", "By");
+            var heapCommitted = metrics.gauge("jvm_memory_heap_committed", "By");
+            var heapMax = metrics.gauge("jvm_memory_heap_max", "By");
 
-            return () -> emitMemStats(memInitial, memUsed, memCommitted, memMax);
+            var poolInitial = metrics.gauge("jvm_memory_pool_initial", "By", "pool");
+            var poolUsed = metrics.gauge("jvm_memory_pool_used", "By", "pool");
+            var poolCommitted = metrics.gauge("jvm_memory_pool_committed", "By", "pool");
+            var poolMax = metrics.gauge("jvm_memory_pool_max", "By", "pool");
+
+            return () -> emitMemStats(heapInitial, heapUsed, heapCommitted, heapMax, poolInitial, poolUsed, poolCommitted, poolMax);
         });
     }
 
@@ -32,23 +37,27 @@ public final class JmxMetrics {
         });
     }
 
-    private static void emitMemStats(Gauge memInitial,
-                                     Gauge memUsed,
-                                     Gauge memCommitted,
-                                     Gauge memMax) {
+    private static void emitMemStats(Gauge heapInitial,
+                                     Gauge heapUsed,
+                                     Gauge heapCommitted,
+                                     Gauge heapMax,
+                                     Gauge poolInitial,
+                                     Gauge poolUsed,
+                                     Gauge poolCommitted,
+                                     Gauge poolMax) {
         // Get the MemoryMXBean
         var memoryMXBean = ManagementFactory.getMemoryMXBean();
 
         // Get heap memory usage
         var heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        emitMemUsage(memInitial, memUsed, memCommitted, memMax, heapMemoryUsage, "heap");
+        emitMemUsage(heapInitial, heapUsed, heapCommitted, heapMax, heapMemoryUsage, "");
 
         // Get memory pools
         var memoryPoolMXBeans = ManagementFactory.getMemoryPoolMXBeans();
         for (var memoryPoolMXBean : memoryPoolMXBeans) {
             var usage = memoryPoolMXBean.getUsage();
             var sanitizedName = sanitizeName(memoryPoolMXBean.getName());
-            emitMemUsage(memInitial, memUsed, memCommitted, memMax, usage, sanitizedName);
+            emitMemUsage(poolInitial, poolUsed, poolCommitted, poolMax, usage, sanitizedName);
         }
     }
 
@@ -58,10 +67,14 @@ public final class JmxMetrics {
                                      Gauge memMax,
                                      MemoryUsage memUsage,
                                      String poolName) {
-        memInitial.emit(poolName, memUsage.getInit());
+        if (memUsage.getInit() != -1) {
+            memInitial.emit(poolName, memUsage.getInit());
+        }
         memUsed.emit(poolName, memUsage.getUsed());
         memCommitted.emit(poolName, memUsage.getCommitted());
-        memMax.emit(poolName, memUsage.getMax());
+        if (memUsage.getMax() != -1) {
+            memMax.emit(poolName, memUsage.getMax());
+        }
     }
 
     private static void emitGcStats(Gauge gcCount, Gauge gcTime) {
