@@ -55,9 +55,9 @@ public class MetricsApiTest {
             var counter = metrics.counter("my_counter2", "", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 
-            var prefixedMetrics0 = new PrefixedMetrics(metrics, "Prefix_");
-            var labeledMetrics01 = new LabeledMetrics(prefixedMetrics0, "my_label", "a");
-            var labeledMetrics02 = new LabeledMetrics(prefixedMetrics0, "my_label", "b");
+            var prefixedMetrics0 = metrics.withPrefix("Prefix_");
+            var labeledMetrics01 = prefixedMetrics0.withLabel("my_label", "a");
+            var labeledMetrics02 = prefixedMetrics0.withLabel("my_label", "b");
             var e1Counter01 = labeledMetrics01.counter("abc");
             var e1Counter02 = labeledMetrics02.counter("abc");
 

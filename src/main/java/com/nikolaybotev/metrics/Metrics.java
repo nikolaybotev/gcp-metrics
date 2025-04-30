@@ -2,6 +2,8 @@ package com.nikolaybotev.metrics;
 
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.buckets.LinearBuckets;
+import com.nikolaybotev.metrics.labeled.LabeledMetrics;
+import com.nikolaybotev.metrics.prefixed.PrefixedMetrics;
 import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
 import java.io.Serializable;
@@ -14,6 +16,14 @@ import java.io.Serializable;
  *     MetricDescriptor</a> for a list of supported metric units.
  */
 public interface Metrics extends Serializable {
+    default Metrics withPrefix(String prefix) {
+        return new PrefixedMetrics(this, prefix);
+    }
+
+    default Metrics withLabel(String label, String value) {
+        return new LabeledMetrics(this, label, value);
+    }
+
     Counter counter(String name, String unit, String... label);
 
     Gauge gauge(String name, String unit, String... label);
