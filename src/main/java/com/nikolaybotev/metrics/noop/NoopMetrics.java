@@ -19,8 +19,8 @@ public class NoopMetrics implements Metrics {
     }
 
     @Override
-    public Distribution distribution(String name, String unit, Buckets buckets) {
-        return value -> {};
+    public Distribution distribution(String name, String unit, Buckets buckets, String... label) {
+        return (value, labelValue) -> {};
     }
 
     @Override

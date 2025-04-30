@@ -184,7 +184,7 @@ public class MetricsApiTest {
                         acc += delay;
                         //localAtomic.addAndGet(2);
                         sampleSum.inc((long) delay / 100);
-                        deserializedDistribution4.update((long) delay);
+                        deserializedDistribution4.update("test_value", (long) delay);
                     }
                     sampleSum.inc((long) acc + localAtomic.addAndGet((int) acc % 100));
                     sampleGauge.emit((long) acc);

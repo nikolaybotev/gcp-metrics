@@ -18,7 +18,7 @@ public interface Metrics extends Serializable {
 
     Gauge gauge(String name, String unit, String... label);
 
-    Distribution distribution(String name, String unit, Buckets buckets);
+    Distribution distribution(String name, String unit, Buckets buckets, String... label);
 
     default Counter counter(String name) {
         return counter(name, "");
@@ -28,20 +28,20 @@ public interface Metrics extends Serializable {
         return gauge(name, "");
     }
 
-    default Distribution distribution(String name, Buckets buckets) {
-        return distribution(name, "", buckets);
+    default Distribution distribution(String name, Buckets buckets, String... label) {
+        return distribution(name, "", buckets, label);
     }
 
-    default Distribution distribution(String name, String unit, long step, int count) {
-        return distribution(name, unit, new LinearBuckets(0, step, count));
+    default Distribution distribution(String name, String unit, long step, int count, String... label) {
+        return distribution(name, unit, new LinearBuckets(0, step, count), label);
     }
 
-    default Distribution distribution(String name, long step, int count) {
-        return distribution(name, "", new LinearBuckets(0, step, count));
+    default Distribution distribution(String name, long step, int count, String... label) {
+        return distribution(name, "", new LinearBuckets(0, step, count), label);
     }
 
-    default Distribution distribution(String name) {
-        return distribution(name, "", new LinearBuckets(0, 100, 100));
+    default Distribution distribution(String name, String... label) {
+        return distribution(name, "", new LinearBuckets(0, 100, 100), label);
     }
 
     void addEmitListener(SerializableSupplier<Runnable> listener);

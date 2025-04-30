@@ -1,8 +1,10 @@
 package com.nikolaybotev.metrics.gcloud;
 
+import com.google.common.collect.ImmutableList;
 import com.nikolaybotev.metrics.Distribution;
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.gcloud.distribution.aggregator.DistributionAggregatorWriter;
+import com.nikolaybotev.metrics.gcloud.labels.LabelAggregatorWriterRegistry;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 
 import java.io.Serial;
@@ -17,23 +19,26 @@ public class GCloudDistribution implements Distribution {
     private final String name;
     private final String unit;
     private final Buckets buckets;
-    private final SerializableLazy<? extends DistributionAggregatorWriter> aggregator;
+    private final ImmutableList<String> labelKey;
+    private final SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends DistributionAggregatorWriter>> aggregator;
 
-    public GCloudDistribution(GCloudMetrics metrics, String name, String unit, Buckets buckets, SerializableLazy<? extends DistributionAggregatorWriter> aggregator) {
+    public GCloudDistribution(GCloudMetrics metrics, String name, String unit, Buckets buckets, ImmutableList<String> labelKey,
+                              SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends DistributionAggregatorWriter>> aggregator) {
         this.metrics = metrics;
         this.name = name;
         this.unit = unit;
         this.buckets = buckets;
+        this.labelKey = labelKey;
         this.aggregator = aggregator;
     }
 
     @Override
-    public void update(long value) {
-        aggregator.getValue().add(value);
+    public void update(long value, String... labelValue) {
+        aggregator.getValue().getAggregatorForLabelValue(labelValue).add(value);
     }
 
     @Serial
     private Object readResolve() {
-        return requireNonNull(metrics).getDistribution(name, unit, buckets);
+        return requireNonNull(metrics).getDistribution(name, unit, buckets, labelKey);
     }
 }

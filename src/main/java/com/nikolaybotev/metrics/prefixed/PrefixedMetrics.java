@@ -27,8 +27,8 @@ public class PrefixedMetrics implements Metrics {
     }
 
     @Override
-    public Distribution distribution(String name, String unit, Buckets buckets) {
-        return metrics.distribution(prefix + name, unit, buckets);
+    public Distribution distribution(String name, String unit, Buckets buckets, String... label) {
+        return metrics.distribution(prefix + name, unit, buckets, label);
     }
 
     @Override

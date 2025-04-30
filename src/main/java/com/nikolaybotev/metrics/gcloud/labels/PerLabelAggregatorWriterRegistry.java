@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
-public class PerLabelAggregatorWriterRegistry<T> implements LabelAggregatorWriterRegistry<T> {
+public final class PerLabelAggregatorWriterRegistry<T> implements LabelAggregatorWriterRegistry<T> {
     private final int labelCount;
     private final Function<ImmutableList<String>, T> aggregatorFactory;
     private final ConcurrentMap<ImmutableList<String>, T> aggregators;

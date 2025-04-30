@@ -3,5 +3,9 @@ package com.nikolaybotev.metrics;
 import java.io.Serializable;
 
 public interface Distribution extends Serializable {
-    void update(long value);
+    default void update(String labelValue, long value) {
+        update(value, labelValue);
+    }
+
+    void update(long value, String... labelValue);
 }

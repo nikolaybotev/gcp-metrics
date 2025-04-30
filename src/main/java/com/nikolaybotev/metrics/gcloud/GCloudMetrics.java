@@ -149,8 +149,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     }
 
     @Override
-    public Distribution distribution(String name, String unit, Buckets buckets) {
-        return getDistribution(name, unit, buckets);
+    public Distribution distribution(String name, String unit, Buckets buckets, String... labelKey) {
+        return getDistribution(name, unit, buckets, ImmutableList.copyOf(labelKey));
     }
 
     GCloudCounter getCounter(String name, String unit, ImmutableList<String> labelKey) {
@@ -189,20 +189,21 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         });
     }
 
-    GCloudDistribution getDistribution(String name, String unit, Buckets buckets) {
+    GCloudDistribution getDistribution(String name, String unit, Buckets buckets, ImmutableList<String> labelKey) {
         return distributions.computeIfAbsent(name, key -> {
-            var lazyAggregator = new SerializableLazySync<>(() -> {
-                var aggregator = new DistributionAggregatorParted(buckets);
-                var metric = createMetric(name);
-                var timeSeriesTemplate = createTimeSeriesTemplate(metric, unit, MetricDescriptor.ValueType.DISTRIBUTION);
-                var bucketOptions = GCloudBucketOptions.from(buckets);
-                var gcloudAggregator = new GCloudDistributionAggregator(timeSeriesTemplate, bucketOptions, aggregator);
+            var lazyAggregator = new SerializableLazySync<>(
+                    () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
+                        var aggregator = new DistributionAggregatorParted(buckets);
+                        var metric = createMetricWithLabels(name, labelKey, labelValue);
+                        var timeSeriesTemplate = createTimeSeriesTemplate(metric, unit, MetricDescriptor.ValueType.DISTRIBUTION);
+                        var bucketOptions = GCloudBucketOptions.from(buckets);
+                        var gcloudAggregator = new GCloudDistributionAggregator(timeSeriesTemplate, bucketOptions, aggregator);
 
-                emitter.getValue().addAggregator(gcloudAggregator);
-                return aggregator;
-            });
+                        emitter.getValue().addAggregator(gcloudAggregator);
+                        return aggregator;
+                    }));
 
-            return new GCloudDistribution(this, name, unit, buckets, lazyAggregator);
+            return new GCloudDistribution(this, name, unit, buckets, labelKey, lazyAggregator);
         });
     }
 

@@ -5,10 +5,13 @@ import com.nikolaybotev.metrics.util.lazy.SerializableLazySync;
 
 import java.util.function.Function;
 
-public interface LabelAggregatorWriterRegistry<T> {
-    static <T> LabelAggregatorWriterRegistry<T> create(int labelCount, Function<ImmutableList<String>, T> aggregatorFactory) {
+public sealed interface LabelAggregatorWriterRegistry<T>
+        permits SingleAggregatorWriterRegistry, PerLabelAggregatorWriterRegistry {
+    static <T> LabelAggregatorWriterRegistry<T> create(int labelCount,
+                                                       Function<ImmutableList<String>, T> aggregatorFactory) {
         return switch (labelCount) {
-            case 0 -> new SingleAggregatorWriterRegistry<>(new SerializableLazySync<>(() -> aggregatorFactory.apply(ImmutableList.of())));
+            case 0 -> new SingleAggregatorWriterRegistry<>(
+                    new SerializableLazySync<>(() -> aggregatorFactory.apply(ImmutableList.of())));
             default -> new PerLabelAggregatorWriterRegistry<>(labelCount, aggregatorFactory);
         };
     }
