@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -37,6 +38,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
 
     private final SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier;
     private final CreateTimeSeriesRequest requestTemplate;
+    private final SerializableLazy<Map<String, String>> metricLabels;
     private final Duration emitInterval;
     private final RetryOnExceptions retryOnExceptions;
     private final List<Runnable> emitListeners;
@@ -52,12 +54,14 @@ public class GCloudMetricsEmitter implements AutoCloseable {
 
     public GCloudMetricsEmitter(SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier,
                                 CreateTimeSeriesRequest requestTemplate,
+                                SerializableSupplier<Map<String, String>> metricLabels,
                                 Duration emitInterval,
                                 RetryOnExceptions retryOnExceptions,
                                 Collection<Runnable> emitListeners,
                                 Metrics metrics) {
         this.metricServiceSettingsSupplier = metricServiceSettingsSupplier;
         this.requestTemplate = requestTemplate;
+        this.metricLabels = new SerializableLazySync<>(() -> Map.copyOf(metricLabels.getValue()));
         this.emitInterval = emitInterval;
         this.retryOnExceptions = retryOnExceptions;
         this.emitListeners = List.copyOf(emitListeners);
@@ -131,6 +135,7 @@ public class GCloudMetricsEmitter implements AutoCloseable {
 
     public void emit() {
         var request = requestTemplate.toBuilder();
+        var metricLabelsCached = this.metricLabels.getValue();
 
         for (var aggregator : aggregators) {
             var interval = TimeInterval.newBuilder()
@@ -144,7 +149,11 @@ public class GCloudMetricsEmitter implements AutoCloseable {
                     .setValue(value)
                     .build();
 
-            var timeSeries = aggregator.getTimeSeriesTemplate().toBuilder()
+            var timeSeriesTemplate = aggregator.getTimeSeriesTemplate();
+            var timeSeries = timeSeriesTemplate.toBuilder()
+                    .setMetric(timeSeriesTemplate.getMetric().toBuilder()
+                            .putAllLabels(metricLabelsCached)
+                            .build())
                     .addPoints(point)
                     .build();
 

@@ -7,9 +7,12 @@ import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.gcloud.GCloudMetrics;
 import com.nikolaybotev.metrics.jmx.JmxMetrics;
 import com.nikolaybotev.metrics.prefixed.PrefixedMetrics;
+import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
 import java.io.*;
 import java.lang.management.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +39,18 @@ public class MetricsApiTest {
                 .putAllLabels(resourceLabels)
                 .build();
 
-        try (var metrics = new GCloudMetrics(createRequest, resource, "my_news/")) {
+        SerializableSupplier<Map<String, String>> globalLabels = () -> {
+            String hostname;
+            try {
+                var ip = InetAddress.getLocalHost();
+                hostname = ip.getHostName();
+            } catch (UnknownHostException e) {
+                hostname = "unknown";
+            }
+            return Map.of("hostname", hostname);
+        };
+
+        try (var metrics = new GCloudMetrics(createRequest, resource, globalLabels, "my_news/")) {
             var counter = metrics.counter("my_counter2", "", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 

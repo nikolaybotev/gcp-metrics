@@ -30,6 +30,7 @@ import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -63,6 +64,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     private final SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier;
     private final CreateTimeSeriesRequest requestTemplate;
     private final MonitoredResource resource;
+    private final SerializableSupplier<Map<String, String>> metricLabels;
     private final String metricsPrefix;
     private final Duration emitInterval;
     private final RetryOnExceptions emitRetryPolicy;
@@ -77,19 +79,31 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
     public GCloudMetrics(CreateTimeSeriesRequest requestTemplate,
                          MonitoredResource resource,
                          String metricsPrefix) {
-        this(DEFAULT_METRICS_SERVICE_SETTINGS, requestTemplate, resource, metricsPrefix, DEFAULT_EMIT_INTERVAL,
+        this(DEFAULT_METRICS_SERVICE_SETTINGS, requestTemplate, resource, Map::of, metricsPrefix,
+                DEFAULT_EMIT_INTERVAL,
+                DEFAULT_EMIT_RETRY_POLICY);
+    }
+
+    public GCloudMetrics(CreateTimeSeriesRequest requestTemplate,
+                         MonitoredResource resource,
+                         SerializableSupplier<Map<String, String>> metricLabels,
+                         String metricsPrefix) {
+        this(DEFAULT_METRICS_SERVICE_SETTINGS, requestTemplate, resource, metricLabels, metricsPrefix,
+                DEFAULT_EMIT_INTERVAL,
                 DEFAULT_EMIT_RETRY_POLICY);
     }
 
     public GCloudMetrics(SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier,
                          CreateTimeSeriesRequest requestTemplate,
                          MonitoredResource resource,
+                         SerializableSupplier<Map<String, String>> metricLabels,
                          String metricsPrefix,
                          Duration emitInterval,
                          RetryOnExceptions emitRetryPolicy) {
         this.metricServiceSettingsSupplier = metricServiceSettingsSupplier;
         this.requestTemplate = requestTemplate;
         this.resource = resource;
+        this.metricLabels = metricLabels;
         this.metricsPrefix = metricsPrefix;
         this.emitInterval = emitInterval;
         this.emitRetryPolicy = emitRetryPolicy;
@@ -102,7 +116,8 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
 
     private GCloudMetricsEmitter createEmitter() {
         var actualEmitListeners = emitListeners.stream().map(SerializableSupplier::getValue).toList();
-        return new GCloudMetricsEmitter(metricServiceSettingsSupplier, requestTemplate, emitInterval, emitRetryPolicy, actualEmitListeners, this);
+        return new GCloudMetricsEmitter(metricServiceSettingsSupplier, requestTemplate, metricLabels, emitInterval,
+                emitRetryPolicy, actualEmitListeners, this);
     }
 
     @Override
