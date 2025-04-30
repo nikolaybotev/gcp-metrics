@@ -6,6 +6,7 @@ import com.google.monitoring.v3.CreateTimeSeriesRequest;
 import com.google.monitoring.v3.ProjectName;
 import com.nikolaybotev.metrics.gcloud.GCloudMetrics;
 import com.nikolaybotev.metrics.jmx.JmxMetrics;
+import com.nikolaybotev.metrics.labeled.LabeledMetrics;
 import com.nikolaybotev.metrics.prefixed.PrefixedMetrics;
 import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
@@ -54,6 +55,12 @@ public class MetricsApiTest {
             var counter = metrics.counter("my_counter2", "", "status_code", "delayed");
             var distribution = metrics.distribution("test_distribution5", 100, 100);
 
+            var prefixedMetrics0 = new PrefixedMetrics(metrics, "Prefix_");
+            var labeledMetrics01 = new LabeledMetrics(prefixedMetrics0, "my_label", "a");
+            var labeledMetrics02 = new LabeledMetrics(prefixedMetrics0, "my_label", "b");
+            var e1Counter01 = labeledMetrics01.counter("abc");
+            var e1Counter02 = labeledMetrics02.counter("abc");
+
             // Serialize the objects
             var serializedMetrics = new ByteArrayOutputStream();
             try (var oos = new ObjectOutputStream(serializedMetrics)) {
@@ -63,6 +70,9 @@ public class MetricsApiTest {
                 oos.writeObject(metrics);
                 oos.writeObject(distribution);
                 oos.writeObject(counter);
+                oos.writeObject(prefixedMetrics0);
+                oos.writeObject(e1Counter01);
+                oos.writeObject(e1Counter02);
             }
 
             // Deserialize the objects
@@ -102,10 +112,19 @@ public class MetricsApiTest {
                 deserializedDistribution3 = (Distribution) ois.readObject();
                 deserializedCounter3 = (Counter) ois.readObject();
             }
+            Metrics prefixedMetrics;
+            Counter e1Counter1;
+            Counter e1Counter2;
             try (var ois = new ObjectInputStream(new ByteArrayInputStream(serializedMetrics.toByteArray()))) {
                 deserializedMetrics4 = (Metrics) ois.readObject();
                 deserializedDistribution4 = (Distribution) ois.readObject();
                 deserializedCounter4 = (Counter) ois.readObject();
+                ois.readObject();
+                ois.readObject();
+                ois.readObject();
+                prefixedMetrics = (Metrics) ois.readObject();
+                e1Counter1 = (Counter) ois.readObject();
+                e1Counter2 = (Counter) ois.readObject();
             }
 
             // Check if the deserialized instance is the same as the original
@@ -148,6 +167,14 @@ public class MetricsApiTest {
                 distribution.update((long) value);
             }
 
+            var endpointCounter = metrics.counter("api_count", "", "endpoint");
+            endpointCounter.inc("", 2);
+            endpointCounter.inc("2", 3);
+            endpointCounter.inc(4);
+
+            e1Counter1.inc(5);
+            e1Counter2.inc(7);
+
             metrics.flush();
             System.out.println("Time series created successfully.");
 
@@ -159,7 +186,6 @@ public class MetricsApiTest {
             // Gather stats for metric submission time...
             var submitTimeMicros = deserializedMetrics4.distribution("thousand_point_submit_time", "us", 2_500, 200);
             var submitTimeMillis = deserializedMetrics4.distribution("thousand_point_submit_time_ms", "ms", 10, 200);
-            var prefixedMetrics = new PrefixedMetrics(deserializedMetrics4, "Prefix_");
             var sampleSum = prefixedMetrics.counter("thousand_point_submit_gauge", "", "status");
             var sampleGauge = deserializedMetrics4.gauge("gauge_thousand_oaks");
             var threads = 100;

@@ -7,7 +7,12 @@ import com.nikolaybotev.metrics.Metrics;
 import com.nikolaybotev.metrics.buckets.Buckets;
 import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 
+import java.io.Serial;
+
 public class PrefixedMetrics implements Metrics {
+    @Serial
+    private static final long serialVersionUID = 2917232774129942434L;
+
     private final Metrics metrics;
     private final String prefix;
 
