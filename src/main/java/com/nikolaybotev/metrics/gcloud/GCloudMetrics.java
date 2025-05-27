@@ -93,6 +93,15 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
                 DEFAULT_EMIT_RETRY_POLICY);
     }
 
+    public GCloudMetrics(CreateTimeSeriesRequest requestTemplate,
+                         MonitoredResource resource,
+                         SerializableSupplier<Map<String, String>> metricLabels,
+                         String metricsPrefix,
+                         Duration emitInterval) {
+        this(DEFAULT_METRICS_SERVICE_SETTINGS, requestTemplate, resource, metricLabels, metricsPrefix, emitInterval,
+                DEFAULT_EMIT_RETRY_POLICY);
+    }
+
     public GCloudMetrics(SerializableSupplier<MetricServiceSettings> metricServiceSettingsSupplier,
                          CreateTimeSeriesRequest requestTemplate,
                          MonitoredResource resource,
