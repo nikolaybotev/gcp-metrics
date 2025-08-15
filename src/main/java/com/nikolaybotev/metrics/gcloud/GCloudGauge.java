@@ -5,6 +5,7 @@ import com.nikolaybotev.metrics.Gauge;
 import com.nikolaybotev.metrics.gcloud.counter.aggregator.CounterAggregatorWriter;
 import com.nikolaybotev.metrics.gcloud.labels.LabelAggregatorWriterRegistry;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
+import org.jspecify.annotations.NonNull;
 
 import java.io.Serial;
 
@@ -17,10 +18,10 @@ public class GCloudGauge implements Gauge {
     private final GCloudMetrics metrics;
     private final String name;
     private final String unit;
-    private final ImmutableList<String> labelKey;
+    private final ImmutableList<@NonNull String> labelKey;
     private final SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators;
 
-    public GCloudGauge(GCloudMetrics metrics, String name, String unit, ImmutableList<String> labelKey,
+    public GCloudGauge(GCloudMetrics metrics, String name, String unit, ImmutableList<@NonNull String> labelKey,
                        SerializableLazy<? extends LabelAggregatorWriterRegistry<? extends CounterAggregatorWriter>> aggregators) {
         this.metrics = metrics;
         this.name = name;

@@ -24,6 +24,7 @@ import com.nikolaybotev.metrics.util.lazy.SerializableLazy;
 import com.nikolaybotev.metrics.util.lazy.SerializableLazySync;
 import com.nikolaybotev.metrics.util.lazy.SerializableSupplier;
 import com.nikolaybotev.metrics.util.retry.RetryOnExceptions;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -162,7 +163,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         return getDistribution(name, unit, buckets, ImmutableList.copyOf(labelKey));
     }
 
-    GCloudCounter getCounter(String name, String unit, ImmutableList<String> labelKey) {
+    GCloudCounter getCounter(String name, String unit, ImmutableList<@NonNull String> labelKey) {
         return counters.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(
                     () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
@@ -180,7 +181,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         });
     }
 
-    GCloudGauge getGauge(String name, String unit, ImmutableList<String> labelKey) {
+    GCloudGauge getGauge(String name, String unit, ImmutableList<@NonNull String> labelKey) {
         return gauges.computeIfAbsent(name, key -> {
             var lazyAggregators = new SerializableLazySync<>(
                     () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
@@ -198,7 +199,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
         });
     }
 
-    GCloudDistribution getDistribution(String name, String unit, Buckets buckets, ImmutableList<String> labelKey) {
+    GCloudDistribution getDistribution(String name, String unit, Buckets buckets, ImmutableList<@NonNull String> labelKey) {
         return distributions.computeIfAbsent(name, key -> {
             var lazyAggregator = new SerializableLazySync<>(
                     () -> LabelAggregatorWriterRegistry.create(labelKey.size(), labelValue -> {
@@ -231,7 +232,7 @@ public class GCloudMetrics implements Metrics, AutoCloseable {
                 .setType("custom.googleapis.com/" + metricsPrefix + name);
     }
 
-    private Metric.Builder createMetricWithLabels(String name, ImmutableList<String> labelKey, ImmutableList<String> labelValue) {
+    private Metric.Builder createMetricWithLabels(String name, ImmutableList<@NonNull String> labelKey, ImmutableList<@NonNull String> labelValue) {
         var metric = createMetric(name);
         for (var i = 0; i < Math.min(labelKey.size(), labelValue.size()); i++) {
             metric.putLabels(labelKey.get(i), labelValue.get(i));

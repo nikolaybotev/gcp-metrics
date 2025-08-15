@@ -1,6 +1,7 @@
 package com.nikolaybotev.metrics.gcloud.labels;
 
 import com.google.common.collect.ImmutableList;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +10,10 @@ import java.util.function.Function;
 
 public final class PerLabelAggregatorWriterRegistry<T> implements LabelAggregatorWriterRegistry<T> {
     private final int labelCount;
-    private final Function<ImmutableList<String>, T> aggregatorFactory;
-    private final ConcurrentMap<ImmutableList<String>, T> aggregators;
+    private final Function<ImmutableList<@NonNull String>, T> aggregatorFactory;
+    private final ConcurrentMap<ImmutableList<@NonNull String>, T> aggregators;
 
-    public PerLabelAggregatorWriterRegistry(int labelCount, Function<ImmutableList<String>, T> aggregatorFactory) {
+    public PerLabelAggregatorWriterRegistry(int labelCount, Function<ImmutableList<@NonNull String>, T> aggregatorFactory) {
         this.labelCount = labelCount;
         this.aggregatorFactory = aggregatorFactory;
         this.aggregators = new ConcurrentHashMap<>();
@@ -24,7 +25,7 @@ public final class PerLabelAggregatorWriterRegistry<T> implements LabelAggregato
         return aggregators.computeIfAbsent(labelValuesForKeys, aggregatorFactory);
     }
 
-    private ImmutableList<String> getLabelValuesForKeys(String[] labelValue) {
+    private ImmutableList<@NonNull String> getLabelValuesForKeys(String[] labelValue) {
         if (labelValue.length <= labelCount) {
             return ImmutableList.copyOf(labelValue);
         }
